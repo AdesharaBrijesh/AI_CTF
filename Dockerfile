@@ -1,12 +1,13 @@
 # Challenge 08 - Prompt-Injection Ladder (10 levels)
 # Build: docker build -t aictf/08-prompt-injection-ladder:1.0 .
-# Ollama (optional) runs on the HOST; the container reaches it at host.docker.internal:11434.
+# Ollama runs on a separate PC (or the Docker host); set OLLAMA_URL in .env.
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    TZ=UTC
+    TZ=UTC \
+    OLLAMA_URL=http://host.docker.internal:11434
 
 WORKDIR /app
 

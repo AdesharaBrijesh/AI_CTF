@@ -45,7 +45,7 @@ async def board():
         for lid, rec in s.solve_log.items():
             attacks.append({"level": lid, "team": s.team or sid[:8], "prompts": rec["prompts"]})
     attacks.sort(key=lambda a: a["level"])
-    return {"teams": _rows(), "attacks": attacks, "mode": settings.mode, "model": settings.model if settings.mode == "api" else "mock-engine"}
+    return {"teams": _rows(), "attacks": attacks, "mode": settings.mode, "model": settings.model if settings.mode == "ollama" else "mock-engine"}
 
 
 @router.get("/export.csv", dependencies=[Depends(require_admin)])

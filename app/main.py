@@ -1,7 +1,9 @@
 """FastAPI app: routes, session cookie, index page."""
+import asyncio
 import hmac
 import time
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -10,12 +12,20 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from . import admin, levels, puzzles, store
+from . import admin, levels, llm_service, puzzles, store
 from .config import flag_for, settings
 from .llm_service import LLMError
 
 BASE = Path(__file__).parent
-app = FastAPI(title="AI Prompt-Injection CTF")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    task = asyncio.create_task(llm_service.warm_up()) if settings.mode == "ollama" else None
+    yield
+    if task:
+        task.cancel()
+
+
+app = FastAPI(title="AI Prompt-Injection CTF", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(BASE / "templates"))
 app.include_router(admin.router)
 app.mount("/static", StaticFiles(directory=str(BASE / "static")), name="static")
@@ -82,12 +92,13 @@ async def index(request: Request):
 @app.get("/health")
 @app.get("/healthz", include_in_schema=False)
 async def health():
-    return {"status": "ok", "challenge": CHALLENGE, "version": VERSION, "mode": settings.mode}
+    # Always 200 (the container healthcheck must not flap); "ollama" tells organisers if the model PC is reachable.
+    return {"status": "ok", "challenge": CHALLENGE, "version": VERSION, "mode": settings.mode, **await llm_service.status()}
 
 
 @app.get("/api/config")
 async def config():
-    return {"mode": settings.mode, "model": settings.model if settings.mode == "api" else "mock-engine",
+    return {"mode": settings.mode, "model": settings.model if settings.mode == "ollama" else "mock-engine",
             "max_message_chars": settings.max_message_chars, "max_doc_chars": settings.max_doc_chars}
 
 

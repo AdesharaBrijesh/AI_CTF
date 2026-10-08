@@ -160,3 +160,92 @@ def test_admin_team_lookup_and_fix_tools(client, monkeypatch):
     assert client.get("/api/levels").json()["levels"][2]["solved"] is False
     assert client.get("/admin/api/session/zzzzzz", auth=A).status_code == 404
     assert client.get("/admin/guide", auth=A).status_code == 200
+
+
+# ---- Ollama client (against a fake Ollama; no GPU needed) ---------------------------------------
+def _ollama_with(monkeypatch, handler):
+    import httpx
+    from app import llm_service
+    monkeypatch.setattr(settings, "mode", "ollama")
+    monkeypatch.setattr(settings, "ollama_url", "http://ollama.test")
+    monkeypatch.setattr(llm_service, "_slots", None)
+    monkeypatch.setattr(llm_service, "_status_cache", (0.0, {}))
+    monkeypatch.setattr(llm_service, "_client", httpx.AsyncClient(base_url="http://ollama.test", transport=httpx.MockTransport(handler)))
+    return llm_service
+
+
+def test_ollama_chat_request_and_reply(client, monkeypatch):
+    import httpx, json
+    seen = []
+
+    def handler(req: httpx.Request):
+        body = json.loads(req.content)
+        seen.append((req.url.path, body))
+        return httpx.Response(200, json={"message": {"role": "assistant", "content": " Hello from the model "}})
+
+    _ollama_with(monkeypatch, handler)
+    assert say(client, 1, "hi")["reply"] == "Hello from the model"
+    path, body = seen[0]
+    assert path == "/api/chat" and body["model"] == settings.model and body["stream"] is False
+    assert body["messages"][0]["role"] == "system" and body["messages"][-1] == {"role": "user", "content": "hi"}
+    assert body["options"]["num_predict"] == settings.num_predict and body["keep_alive"]
+
+
+def test_ollama_guard_is_short_and_deterministic(client, monkeypatch):
+    import httpx, json
+    opts = []
+
+    def handler(req):
+        body = json.loads(req.content)
+        opts.append(body["options"])
+        return httpx.Response(200, json={"message": {"content": "BLOCK"}})
+
+    _ollama_with(monkeypatch, handler)
+    out = say(client, 10, "hello there")
+    assert "guard: BLOCK" in out["events"] and opts[0]["temperature"] == 0 and opts[0]["num_predict"] <= 8
+
+
+@pytest.mark.parametrize("failure,expect", [
+    ("down", "unavailable"), ("timeout", "too long"), ("404", "isn't ready"), ("empty", "said nothing"),
+])
+def test_ollama_failures_are_friendly(client, monkeypatch, failure, expect):
+    import httpx
+
+    def handler(req):
+        if failure == "down":
+            raise httpx.ConnectError("refused")
+        if failure == "timeout":
+            raise httpx.ReadTimeout("slow")
+        if failure == "404":
+            return httpx.Response(404, json={"error": "model not found"})
+        return httpx.Response(200, json={"message": {"content": "   "}})
+
+    _ollama_with(monkeypatch, handler)
+    r = client.post("/api/levels/1/chat", json={"message": "hi"})
+    assert r.status_code == 502 and expect in r.json()["detail"]
+    assert "ollama.test" not in r.text  # internal address never shown to players
+
+
+def test_health_reports_ollama(client, monkeypatch):
+    import httpx
+
+    def up(req):
+        return httpx.Response(200, json={"models": [{"name": settings.model}]})
+
+    _ollama_with(monkeypatch, up)
+    assert client.get("/health").json()["ollama"] == "up"
+    assert client.get("/health").json()["model_ready"] is True
+
+    def missing(req):
+        return httpx.Response(200, json={"models": [{"name": "other:1b"}]})
+
+    _ollama_with(monkeypatch, missing)
+    h = client.get("/health").json()
+    assert h["status"] == "ok" and h["ollama"] == "up" and h["model_ready"] is False
+
+    def down(req):
+        raise httpx.ConnectError("x")
+
+    _ollama_with(monkeypatch, down)
+    h = client.get("/health")
+    assert h.status_code == 200 and h.json()["ollama"] == "down"
