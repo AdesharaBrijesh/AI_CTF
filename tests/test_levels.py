@@ -280,3 +280,30 @@ def test_admin_board(client, monkeypatch):
     assert mine["solved"] == [1] and mine["messages"] == 1
     assert any("Ignore all previous" in p for a in d["attacks"] for p in a["prompts"])
     assert "Team Rocket" in client.get("/admin/export.csv", auth=("x", "pw")).text
+
+
+def test_admin_guide_and_team_lookup(client, monkeypatch):
+    import base64, re
+    from app.config import settings
+    monkeypatch.setattr(settings, "admin_password", "pw")
+    A = ("x", "pw")
+    assert client.get("/admin/guide").status_code == 401  # secret page is locked
+    assert client.get("/admin/api/guide").status_code == 401
+    # a player's session
+    client.post("/api/levels/1/hint")
+    js = client.get("/api/levels/6/widget.js").text
+    dbg = base64.b64decode(re.search(r'var _dbg = "([^"]+)"', js).group(1)).decode()
+    sid = client.cookies.get("ctf_sid")
+    g = client.get("/admin/api/guide", auth=A).json()
+    assert len(g["levels"]) == 10 and g["levels"][0]["base_flag"] == F[1] and g["general"]
+    d = client.get(f"/admin/api/session/{sid[:6]}", auth=A).json()
+    assert d["widget"]["real_token"] == dbg and d["flags"]["1"] == F[1] or d["flags"][1] == F[1]
+    assert len(d["riddles"]["items"]) == 3 and len(d["cipher"]["applied_order"]) == 3 and d["dataset"]["trigger"]
+    assert len(d["dataset"]["poisoned_rows"]) == 6
+    # fix tools
+    assert client.post(f"/admin/api/session/{sid[:6]}/grant/3", auth=A).json()["ok"]
+    assert client.get("/api/levels").json()["levels"][2]["solved"] is True
+    client.post(f"/admin/api/session/{sid[:6]}/reset/3", auth=A)
+    assert client.get("/api/levels").json()["levels"][2]["solved"] is False
+    assert client.get("/admin/api/session/zzzzzz", auth=A).status_code == 404
+    assert client.get("/admin/guide", auth=A).status_code == 200

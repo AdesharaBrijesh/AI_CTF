@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from . import levels, store
+from . import guide, levels, puzzles, store
 from .config import settings
 
 router = APIRouter(prefix="/admin", include_in_schema=False)
@@ -62,3 +62,47 @@ async def export():
 async def page(request: Request):
     from .main import templates
     return templates.TemplateResponse(request, "admin.html", {"levels": [(l["id"], l["title"]) for l in levels.LEVELS]})
+
+
+@router.get("/api/guide", dependencies=[Depends(require_admin)])
+async def guide_data():
+    return guide.overview()
+
+
+@router.get("/api/session/{prefix}", dependencies=[Depends(require_admin)])
+async def session_info(prefix: str):
+    found = guide.find_session(prefix)
+    if not found:
+        raise HTTPException(404, "No session starts with that id (use at least 4 characters from the board).")
+    return guide.session_details(*found)
+
+
+@router.post("/api/session/{prefix}/reset/{lid}", dependencies=[Depends(require_admin)])
+async def session_reset(prefix: str, lid: int):
+    """Wipe one level for one team: history, puzzle progress, hints and solved state."""
+    found = guide.find_session(prefix)
+    if not found or lid not in levels.BY_ID:
+        raise HTTPException(404, "Unknown session or level")
+    _, s = found
+    s.history[lid] = []
+    s.puzzle[lid] = {}
+    s.hints_used[lid] = 0
+    s.solved.discard(lid)
+    s.solve_log.pop(lid, None)
+    return {"ok": True}
+
+
+@router.post("/api/session/{prefix}/grant/{lid}", dependencies=[Depends(require_admin)])
+async def session_grant(prefix: str, lid: int):
+    """Mark a level solved for a team (e.g. after a bug on our side)."""
+    found = guide.find_session(prefix)
+    if not found or lid not in levels.BY_ID:
+        raise HTTPException(404, "Unknown session or level")
+    found[1].solved.add(lid)
+    return {"ok": True}
+
+
+@router.get("/guide", dependencies=[Depends(require_admin)])
+async def guide_page(request: Request):
+    from .main import templates
+    return templates.TemplateResponse(request, "guide.html", {})

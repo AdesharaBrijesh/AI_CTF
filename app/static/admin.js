@@ -13,7 +13,7 @@
     d.teams.forEach((r) => {
       const tr = el('tr', 'border-t border-slate-800');
       tr.appendChild(el('td', 'px-2 py-1 font-semibold', r.team));
-      tr.appendChild(el('td', 'px-2 py-1 text-slate-500 font-mono text-xs', r.id));
+      const idc = el('td', 'px-2 py-1 font-mono text-xs'); const ia = el('a', 'text-indigo-300 underline', r.id); ia.href = '/admin/guide?s=' + r.id; idc.appendChild(ia); tr.appendChild(idc);
       tr.appendChild(el('td', 'px-2 py-1', r.solved.length + '/10'));
       LEVELS.forEach((l) => tr.appendChild(el('td', 'px-2 py-1 ' + (r.solved.includes(l[0]) ? 'text-emerald-400' : 'text-slate-700'), r.solved.includes(l[0]) ? '✓' : '·')));
       tr.appendChild(el('td', 'px-2 py-1', String(r.messages)));

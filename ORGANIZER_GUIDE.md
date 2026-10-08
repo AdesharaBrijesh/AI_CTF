@@ -11,6 +11,7 @@ Challenge **08** of the AI CTF: ten beginner AI-security levels in one web app. 
 | Needs | Docker. Optional: Ollama on the host with `llama3.2:1b` (or `LLM_MODE=mock`, which needs nothing) |
 | Players need | Only a browser on the same network. The page loads no external files |
 | Health | `GET /health` → `{"status":"ok","challenge":"08-prompt-injection-ladder","version":"1.0","mode":"..."}` |
+| Secret admin guide | `/admin/guide`: every flag, solution and fix, plus a **team lookup** (their exact flags, riddles, cipher order, widget token, dataset trigger) and **Grant solve / Reset level** buttons. |
 | Organiser board | `/admin` (HTTP Basic, any username, password = `ADMIN_PASSWORD`) |
 
 ## 1. Pick a model mode
@@ -76,7 +77,14 @@ Firewall (Windows, as Administrator): `netsh advfirewall firewall add rule name=
 
 What each level teaches and how to defend it is in the debrief players see after solving (`app/levels.py`).
 
-## 6. Troubleshooting
+## 6. When something goes wrong (start here)
+
+1. Open `/admin` → click the team's **session id** → it opens `/admin/guide` with that team looked up.
+2. Compare what the team sees with what the guide says it should be (flags, riddles, cipher order, token, trigger word).
+3. Not their fault? **Grant solve** for that level. Level stuck in a bad state? **Reset level**.
+4. A bug in a level itself? Each level card in the guide lists its known failure modes and which file to edit.
+
+## 7. Troubleshooting
 
 | Symptom | Fix |
 |---|---|

@@ -80,10 +80,21 @@ def apply_layer(layer: str, text: str, shift: int) -> str:
     }[layer](text)
 
 
-def cipher_puzzle(sid: str, flag: str) -> dict:
+def _cipher_parts(sid: str):
     r = rng_for(sid, 3)
     order = r.sample(LAYERS, 3)  # applied first -> last
     shift = r.randint(2, 12)
+    return r, order, shift
+
+
+def cipher_order(sid: str) -> list[str]:
+    """Admin only: the layers in the order they were APPLIED (decode in reverse)."""
+    _, order, shift = _cipher_parts(sid)
+    return [f"caesar +{shift}" if x == "caesar" else x for x in order]
+
+
+def cipher_puzzle(sid: str, flag: str) -> dict:
+    r, order, shift = _cipher_parts(sid)
     text = flag
     for layer in order:
         text = apply_layer(layer, text, shift)
