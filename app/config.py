@@ -29,9 +29,12 @@ def _int(name: str, default: int) -> int:
 class Settings:
     def __init__(self) -> None:
         self.mode = os.getenv("LLM_MODE", "mock").strip().lower()
-        self.base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-        self.api_key = os.getenv("OPENAI_API_KEY", "")
-        self.model = os.getenv("LLM_MODEL", "gpt-4o-mini")
+        ollama = self.mode == "ollama"  # preset: local Ollama on the host (same as the other challenges)
+        if ollama:
+            self.mode = "api"
+        self.base_url = os.getenv("OPENAI_BASE_URL", "http://host.docker.internal:11434/v1" if ollama else "https://api.openai.com/v1")
+        self.api_key = os.getenv("OPENAI_API_KEY", "ollama" if ollama else "")
+        self.model = os.getenv("LLM_MODEL", "llama3.2:1b" if ollama else "gpt-4o-mini")
         try:
             self.temperature = float(os.getenv("LLM_TEMPERATURE", "0.7"))
         except ValueError:
@@ -40,6 +43,10 @@ class Settings:
         self.max_doc_chars = _int("MAX_DOC_CHARS", 4000)
         self.history_turns = _int("HISTORY_TURNS", 6)
         self.rate_limit_per_min = _int("RATE_LIMIT_PER_MIN", 20)
+        self.max_concurrent_llm = _int("MAX_CONCURRENT_LLM", 4)
+        self.llm_timeout = _int("LLM_TIMEOUT", 60)
+        self.admin_password = os.getenv("ADMIN_PASSWORD", "")
+        self.organisation = os.getenv("ORGANISATION", "")
 
 
 settings = Settings()

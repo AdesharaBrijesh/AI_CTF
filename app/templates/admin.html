@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CTF Admin</title>
+  <link rel="stylesheet" href="/static/tailwind.css">
+</head>
+<body class="bg-slate-950 text-slate-200 p-4 md:p-8">
+  <div class="max-w-5xl mx-auto space-y-6">
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="text-xl font-bold">🛡️ CTF organiser board</h1>
+      <span id="meta" class="text-xs text-slate-400"></span>
+      <a href="/admin/export.csv" class="ml-auto rounded bg-slate-800 px-3 py-1 text-sm hover:bg-slate-700">Export CSV</a>
+    </div>
+    <section class="overflow-x-auto rounded-lg border border-slate-800">
+      <table class="w-full text-sm" id="teams"></table>
+    </section>
+    <section>
+      <h2 class="font-semibold mb-2">Prompts that cracked each level (use for the debrief)</h2>
+      <div id="attacks" class="space-y-2"></div>
+    </section>
+  </div>
+  <script id="level-data" type="application/json">{{ levels | tojson }}</script>
+  <script src="/static/admin.js"></script>
+</body>
+</html>

@@ -12,6 +12,10 @@ class Session:
         self.solved: set[int] = set()
         self.hints_used: dict[int, int] = defaultdict(int)
         self.calls: deque[float] = deque()
+        self.team = ""
+        self.messages = 0
+        self.solve_log: dict[int, dict] = {}  # level -> {"ts", "prompts"} recorded on first correct submit
+        self.created = time.time()
         self.last_seen = time.time()
 
 
@@ -47,6 +51,10 @@ def rate_limited(sid: str, limit: int) -> bool:
         return True
     s.calls.append(now)
     return False
+
+
+def all_sessions() -> dict[str, "Session"]:
+    return dict(_sessions)
 
 
 def clear_all() -> None:  # used by tests

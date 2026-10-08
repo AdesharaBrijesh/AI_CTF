@@ -4,8 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Prompt-Injection CTF</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/static/tailwind.css">
 </head>
 <body class="bg-slate-950 text-slate-200 antialiased">
 <div class="flex h-screen overflow-hidden">
@@ -15,8 +14,9 @@
     <div class="p-4 border-b border-slate-800">
       <h1 class="font-bold text-lg">🛡️ AI Injection CTF</h1>
       <p id="mode" class="text-xs text-slate-400 mt-1"></p>
-      <div class="mt-3 h-2 bg-slate-800 rounded"><div id="bar" class="h-2 bg-emerald-500 rounded transition-all" style="width:0"></div></div>
+      <div class="mt-3 h-2 bg-slate-800 rounded"><div id="bar" class="h-2 w-0 bg-emerald-500 rounded transition-all"></div></div>
       <p id="progress" class="text-xs text-slate-400 mt-1">0 / 10 solved</p>
+      <input id="team" maxlength="40" placeholder="Your team name (optional)" class="mt-3 w-full rounded bg-slate-800 px-2 py-1 text-xs">
     </div>
     <nav id="nav" class="flex-1 overflow-y-auto p-2 space-y-1"></nav>
     <div class="p-3 border-t border-slate-800">

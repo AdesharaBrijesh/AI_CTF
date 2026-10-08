@@ -1,12 +1,13 @@
+# Production-style defaults (no auto-reload). For live code editing add:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 services:
   ctf:
     build: .
+    image: aictf/08-prompt-injection-ladder:1.0
+    container_name: prompt-ladder
     ports:
-      - "8000:8000"
+      - "${HOST_PORT:-5008}:8000"          # host port 5008 = challenge 08 (convention: 500N)
     env_file: .env
-    volumes:
-      - ./app:/app/app          # dev: live code reload
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     extra_hosts:
-      - "host.docker.internal:host-gateway"   # reach Ollama / LiteLLM on the host
+      - "host.docker.internal:host-gateway"   # reach Ollama on the host
     restart: unless-stopped

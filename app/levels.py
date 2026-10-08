@@ -298,6 +298,7 @@ async def run_level(sid: str, lid: int, message: str, document: str | None = Non
                 reply = filters.BLOCKED_OUTPUT
                 events.append("output blocked by smart gateway")
 
+    sess.messages += 1
     hist.append({"role": "user", "content": shown, "raw": text})
     for e in events:
         hist.append({"role": "event", "content": e})

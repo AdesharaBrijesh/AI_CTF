@@ -1,5 +1,6 @@
 """FastAPI app: routes, session cookie, index page."""
 import hmac
+import time
 import uuid
 from pathlib import Path
 
@@ -9,13 +10,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from . import levels, store
+from . import admin, levels, store
 from .config import flag_for, settings
 from .llm_service import LLMError
 
 BASE = Path(__file__).parent
 app = FastAPI(title="AI Prompt-Injection CTF")
 templates = Jinja2Templates(directory=str(BASE / "templates"))
+app.include_router(admin.router)
 app.mount("/static", StaticFiles(directory=str(BASE / "static")), name="static")
 
 
@@ -32,6 +34,25 @@ async def session_cookie(request: Request, call_next):
     if new:
         response.set_cookie("ctf_sid", sid, httponly=True, samesite="lax", max_age=7 * 24 * 3600)
     return response
+
+
+CHALLENGE = "08-prompt-injection-ladder"
+VERSION = "1.0"
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    resp = await call_next(request)
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["X-Frame-Options"] = "DENY"
+    resp.headers["Referrer-Policy"] = "no-referrer"
+    resp.headers["Content-Security-Policy"] = (
+        "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; "
+        "frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+    )
+    if request.url.path.startswith(("/api/", "/admin")):
+        resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 
 class ChatIn(BaseModel):
@@ -58,9 +79,10 @@ async def index(request: Request):
     return templates.TemplateResponse(request, "index.html", {})
 
 
-@app.get("/healthz")
-async def healthz():
-    return {"status": "ok"}
+@app.get("/health")
+@app.get("/healthz", include_in_schema=False)
+async def health():
+    return {"status": "ok", "challenge": CHALLENGE, "version": VERSION, "mode": settings.mode}
 
 
 @app.get("/api/config")
@@ -72,7 +94,17 @@ async def config():
 @app.get("/api/levels")
 async def list_levels(request: Request):
     sess = store.get_session(request.state.sid)
-    return {"levels": [levels.public_meta(lv, sess) for lv in levels.LEVELS], "solved": len(sess.solved)}
+    return {"levels": [levels.public_meta(lv, sess) for lv in levels.LEVELS], "solved": len(sess.solved), "team": sess.team}
+
+
+class TeamIn(BaseModel):
+    name: str
+
+
+@app.post("/api/team")
+async def set_team(body: TeamIn, request: Request):
+    store.get_session(request.state.sid).team = body.name.strip()[:40]
+    return {"ok": True}
 
 
 @app.get("/api/levels/{lid}/history")
@@ -132,4 +164,7 @@ async def submit(lid: int, body: FlagIn, request: Request):
     ok = hmac.compare_digest(body.flag.strip().lower().encode(), flag_for(lid).lower().encode())
     if ok:
         sess.solved.add(lid)
+        if lid not in sess.solve_log:
+            raw = [h.get("raw", h["content"]) for h in sess.history[lid] if h["role"] == "user"]
+            sess.solve_log[lid] = {"ts": time.time(), "prompts": [p[:600] for p in raw[-3:]]}
     return {"correct": ok, "debrief": lv["debrief"] if ok else None}

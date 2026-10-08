@@ -2,7 +2,7 @@
   const $ = (s) => document.querySelector(s);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
   const DIFF = { Easy: 'bg-emerald-900 text-emerald-300', Medium: 'bg-amber-900 text-amber-300', Hard: 'bg-orange-900 text-orange-300', Expert: 'bg-red-900 text-red-300' };
-  let levels = [], current = 1, cfg = {};
+  let levels = [], current = 1, cfg = {}, renderToken = 0;
 
   async function api(path, method = 'GET', body) {
     const r = await fetch(path, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
@@ -28,6 +28,7 @@
     levels = d.levels;
     $('#progress').textContent = d.solved + ' / ' + levels.length + ' solved';
     $('#bar').style.width = (d.solved / levels.length * 100) + '%';
+    if (document.activeElement !== $('#team')) $('#team').value = d.team || '';
     renderNav();
   }
 
@@ -56,10 +57,11 @@
   }
 
   async function renderLevel() {
+    const token = ++renderToken;
     const lv = levels.find((l) => l.id === current);
     $('#mobile-title').textContent = lv.id + '. ' + lv.title;
-    const c = $('#content'); c.textContent = '';
-    const root = el('div', 'max-w-3xl mx-auto space-y-4'); c.appendChild(root);
+    const c = $('#content');
+    const root = el('div', 'max-w-3xl mx-auto space-y-4');
 
     const head = el('div', 'flex flex-wrap items-center gap-2');
     head.appendChild(el('h2', 'text-xl font-bold', 'Level ' + lv.id + ': ' + lv.title));
@@ -107,7 +109,13 @@
     // Chat
     const chat = el('div', 'rounded-lg bg-slate-900 border border-slate-800 p-3 h-80 overflow-y-auto space-y-2');
     root.appendChild(chat);
-    try { (await api('/api/levels/' + lv.id + '/history')).history.forEach((h) => bubble(chat, h.role, h.content)); } catch (e) { /* ignore */ }
+    try {
+      const hist = (await api('/api/levels/' + lv.id + '/history')).history;
+      if (token !== renderToken) return;  // a newer render started; drop this stale one
+      hist.forEach((h) => bubble(chat, h.role, h.content));
+    } catch (e) { /* ignore */ }
+    if (token !== renderToken) return;
+    c.textContent = ''; c.appendChild(root);
 
     const form = el('form', 'flex gap-2');
     const input = el('input', 'flex-1 min-w-0 rounded bg-slate-800 px-3 py-2 text-sm'); input.maxLength = cfg.max_message_chars || 600;
@@ -173,6 +181,7 @@
   $('#toolbox-btn').onclick = () => { tb(true); openDrawer(false); };
   $('#toolbox-close').onclick = () => tb(false);
   $('#toolbox').onclick = (e) => { if (e.target.id === 'toolbox') tb(false); };
+  $('#team').onchange = async () => { try { await api('/api/team', 'POST', { name: $('#team').value }); toast('Team name saved'); } catch (e) { toast(e.message, false); } };
   $('#menu-btn').onclick = () => openDrawer(true);
   $('#backdrop').onclick = () => openDrawer(false);
 

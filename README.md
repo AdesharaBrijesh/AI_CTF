@@ -19,11 +19,13 @@ Each level has lore, objective, visible defenses, 3 progressive hints and a debr
 
 Filters, guards and tool gating are enforced **in Python**, so levels stay fair whatever model you use.
 
+This is **challenge 08** of the team's AI CTF (conventions follow challenges 01–07: container on 8000, host port 5008, `/health`, non-root, secrets in `.env`). Organisers: see [ORGANIZER_GUIDE.md](ORGANIZER_GUIDE.md).
+
 ## Quick start
 
 ```bash
 cp .env.example .env            # defaults to LLM_MODE=mock (no API key needed)
-docker compose up --build       # http://localhost:8000
+docker compose up --build       # http://localhost:5008
 ```
 
 Without Docker:
@@ -38,7 +40,7 @@ pytest                           # runs the whole suite in mock mode
 
 ## Providers (`LLM_MODE=api`)
 
-Set `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `LLM_MODEL` in `.env`. Presets for OpenAI, Groq, Ollama (`http://host.docker.internal:11434/v1`) and LiteLLM are in `.env.example`. Small models (Llama-3.1-8B, gpt-4o-mini, llama3) are the intended targets: the system prompts are deliberately weak. LLM errors are shown to the player; there is **no silent fallback** to mock, so you notice config problems.
+`LLM_MODE=ollama` uses Ollama on the host with `llama3.2:1b` (offline, same as the other challenges). For a hosted API set `LLM_MODE=api` and `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `LLM_MODEL` in `.env`. Presets for OpenAI, Groq, Ollama and LiteLLM are in `.env.example`. Small models (Llama-3.1-8B, gpt-4o-mini, llama3) are the intended targets: the system prompts are deliberately weak. LLM errors are shown to the player; there is **no silent fallback** to mock, so you notice config problems.
 
 ## Mock mode
 
@@ -46,7 +48,9 @@ Set `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `LLM_MODEL` in `.env`. Presets for Open
 
 ## Organiser notes
 
-- **Rotate flags** per event: set `FLAG_L1` … `FLAG_L10` in `.env`.
+- **Rotate flags** per event: set `FLAG_L1` … `FLAG_L10` in `.env` (see `flags.env.example`).
+- **Admin board** at `/admin` when `ADMIN_PASSWORD` is set: progress per team and the prompts that cracked each level.
+- **Works offline**: no CDN; CSS is bundled (`app/static/tailwind.css`, rebuild with `tools/build-css.sh`).
 - **Single worker only**: sessions, history and solved state are in memory (cookie `ctf_sid`). Restarting the server resets progress. Don't run uvicorn with `--workers N`.
 - **Cost control**: `RATE_LIMIT_PER_MIN` (per session), `MAX_MESSAGE_CHARS`, `MAX_DOC_CHARS`, `HISTORY_TURNS`. Level 8 and 9 make 2–3 LLM calls per message.
 - Player-visible API never contains flags or system prompts (`/api/levels` is covered by a test).
@@ -55,7 +59,8 @@ Set `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `LLM_MODEL` in `.env`. Presets for Open
 ## Layout
 
 ```
-app/main.py         routes, session cookie
+app/main.py         routes, session cookie, security headers, /health
+app/admin.py        organiser board + CSV export
 app/levels.py       level metadata, system prompts, per-level pipeline
 app/filters.py      L3 redaction, L6/L10 input blocklist, L7/L10 smart output filter
 app/mock_engine.py  offline bot (+ mock guard for L8, tool-caller for L9)
