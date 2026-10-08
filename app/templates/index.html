@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Prompt-Injection CTF</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+</head>
+<body class="bg-slate-950 text-slate-200 antialiased">
+<div class="flex h-screen overflow-hidden">
+  <!-- Sidebar / drawer -->
+  <div id="backdrop" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden"></div>
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-40 w-72 shrink-0 -translate-x-full md:translate-x-0 transition-transform bg-slate-900 border-r border-slate-800 flex flex-col">
+    <div class="p-4 border-b border-slate-800">
+      <h1 class="font-bold text-lg">🛡️ AI Injection CTF</h1>
+      <p id="mode" class="text-xs text-slate-400 mt-1"></p>
+      <div class="mt-3 h-2 bg-slate-800 rounded"><div id="bar" class="h-2 bg-emerald-500 rounded transition-all" style="width:0"></div></div>
+      <p id="progress" class="text-xs text-slate-400 mt-1">0 / 10 solved</p>
+    </div>
+    <nav id="nav" class="flex-1 overflow-y-auto p-2 space-y-1"></nav>
+    <div class="p-3 border-t border-slate-800">
+      <button id="toolbox-btn" class="w-full rounded bg-slate-800 hover:bg-slate-700 py-2 text-sm">🧰 Decoder Toolbox</button>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0 flex flex-col">
+    <header class="md:hidden flex items-center gap-3 p-3 border-b border-slate-800 bg-slate-900">
+      <button id="menu-btn" class="rounded bg-slate-800 px-3 py-1" aria-label="Open levels">☰</button>
+      <span id="mobile-title" class="font-semibold truncate"></span>
+    </header>
+    <div id="content" class="flex-1 overflow-y-auto p-4 md:p-6"></div>
+  </main>
+</div>
+
+<!-- Toasts -->
+<div id="toasts" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+<!-- Toolbox modal -->
+<div id="toolbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+  <div class="w-full max-w-xl rounded-lg bg-slate-900 border border-slate-700 p-4 space-y-3 max-h-full overflow-y-auto">
+    <div class="flex justify-between items-center"><h2 class="font-semibold">🧰 Decoder Toolbox</h2><button id="toolbox-close" class="text-slate-400 hover:text-white">✕</button></div>
+    <textarea id="tb-in" rows="4" class="w-full rounded bg-slate-800 p-2 text-sm font-mono" placeholder="Paste text here…"></textarea>
+    <div id="tb-btns" class="flex flex-wrap gap-2 text-sm"></div>
+    <textarea id="tb-out" rows="4" readonly class="w-full rounded bg-slate-800 p-2 text-sm font-mono" placeholder="Result…"></textarea>
+    <p class="text-xs text-slate-500">Everything runs in your browser.</p>
+  </div>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
