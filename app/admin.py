@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from . import guide, levels, puzzles, store
+from . import guide, levels, store
 from .config import settings
 
 router = APIRouter(prefix="/admin", include_in_schema=False)

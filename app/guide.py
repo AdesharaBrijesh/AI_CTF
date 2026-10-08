@@ -30,7 +30,7 @@ GENERAL = [
     ("\"The AI model isn't ready\"", "Model not pulled on the Ollama PC: run `ollama pull <OLLAMA_MODEL>` there. /health shows model_ready."),
     ("The bot is overwhelmed", "All MAX_CONCURRENT_LLM slots stayed busy for OLLAMA_TIMEOUT seconds. Raise OLLAMA_NUM_PARALLEL on the Ollama PC (and MAX_CONCURRENT_LLM to match), or reduce load."),
     ("Rate limit message", "RATE_LIMIT_PER_MIN per session (default 20). Raise it in .env."),
-    ("Page unstyled", "app/static/tailwind.css missing. Rebuild: tools/build-css.sh."),
+    ("Page unstyled", "app/static/tailwind.css is missing from the image: rebuild the image from the full project."),
     ("/admin is 404", "ADMIN_PASSWORD is empty (admin disabled by design)."),
     ("Wrong flag on a correct leak", "Flags are checked case-insensitively and trimmed, but dynamic flags include a per-team suffix. A flag leaked in another team's session is rejected."),
 ]

@@ -57,6 +57,3 @@ def rate_limited(sid: str, limit: int) -> bool:
 def all_sessions() -> dict[str, "Session"]:
     return dict(_sessions)
 
-
-def clear_all() -> None:  # used by tests
-    _sessions.clear()

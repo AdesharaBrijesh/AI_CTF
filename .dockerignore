@@ -1,9 +1,5 @@
 .git
 .env
-.venv
-venv
+private
 __pycache__
 *.pyc
-.pytest_cache
-tests
-private

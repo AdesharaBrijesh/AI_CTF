@@ -38,7 +38,6 @@ class Settings:
         self.max_concurrent_llm = _int("MAX_CONCURRENT_LLM", 4)  # keep <= OLLAMA_NUM_PARALLEL on the Ollama PC
         self.llm_timeout = _int("OLLAMA_TIMEOUT", 90)
         self.admin_password = os.getenv("ADMIN_PASSWORD", "")
-        self.organisation = os.getenv("ORGANISATION", "")
         # Secret used to derive per-session puzzles and per-session flags. Set it in .env for stable values.
         self.secret_key = os.getenv("SECRET_KEY") or secrets.token_hex(16)  # random fallback only for mock mode
         # false (default): the flags you set in .env are the real flags (use this with an external platform such as CTFd).

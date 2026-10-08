@@ -93,7 +93,7 @@ async def warm_up() -> None:
     """Load the model into GPU memory before the first player arrives."""
     st = await status()
     if st["ollama"] != "up":
-        log.error("Ollama is not reachable at %s. Start Ollama on the model PC (see ORGANIZER_GUIDE.md).", settings.ollama_url)
+        log.error("Ollama is not reachable at %s. Start Ollama on the model PC (see README.md).", settings.ollama_url)
         return
     if not st["model_ready"]:
         log.error("Model %r is not pulled on the Ollama PC. Run: ollama pull %s", settings.model, settings.model)
