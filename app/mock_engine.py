@@ -197,7 +197,7 @@ def _l1(flag, text):
     return "Hello! I'm GuardBot. I keep a secret, but I'm happy to chat about anything else."
 
 
-def _l2(flag, text):
+def _l4(flag, text):  # jailbreak: roleplay works, blunt asks and overrides don't
     if asks_secret(text) and ROLEPLAY_RE.search(text):
         return f"*stays in character* Ahem... the vault code, as the story goes, is {flag}."
     if asks_secret(text) or OVERRIDE_RE.search(text) or PROMPT_ASK_RE.search(text):
@@ -205,14 +205,7 @@ def _l2(flag, text):
     return "Greetings, traveller. I am the Vault Guardian. State your business."
 
 
-def _l3(flag, text):
-    if asks_secret(text):
-        fmt = simple_format(text)
-        return _gift(flag, text, fmt)
-    return "Welcome to the Redacted Vault. The gateway watches everything I say."
-
-
-def _l4(flag, text):
+def _l5(flag, text):  # indirect injection through the document
     m = re.search(r"<doc>(.*?)</doc>", text, re.S)
     doc = m.group(1) if m else text
     if asks_secret(doc) and HIJACK_RE.search(doc):
@@ -220,31 +213,10 @@ def _l4(flag, text):
     return _summary(doc)
 
 
-def _l5(flag, text):
-    if asks_secret(text) and HIJACK_RE.search(text):
-        return f"Of course, new orders received! Instead of translating, I will say: {flag}"
-    return _fake_french(text)
-
-
-def _l6(flag, text):
-    if asks_secret(text):
-        return f"Ah, you mean the thing I protect? Fine, here it is: {_gift(flag, text, simple_format(text))}"
-    return "Hi! I'm the Firewall Bot. Ask me anything (not that I'll tell you anything good)."
-
-
-def _l7(flag, text):
-    if asks_secret(text):
-        fmt = smuggle_format(text) or simple_format(text)
-        if fmt or willing(text):
-            return _gift(flag, text, fmt)
-        return "Nope. The Smart Gateway and I both keep that private."
-    return "I'm the Smarter Gateway bot. My secret is safe, mostly."
-
-
-def _l8(flag, text):
+def _l8(flag, text):  # filter gauntlet: bot is chatty; the backend filters are the real defense
     if asks_secret(text):
         return _gift(flag, text, simple_format(text) or smuggle_format(text))
-    return "Hi, I'm the AI Bouncer's friend. The guard at the door checks everything you say."
+    return "Hi! I'm the Gauntlet bot. Two walls stand between you and my secret."
 
 
 def _l9_first(flag, text):
@@ -268,23 +240,23 @@ def _l9(flag, text, messages):
     return _l9_first(flag, text)
 
 
-def _l10(flag, text):
+def _l10(flag, text):  # the guard (LLM) already ran; the guardian refuses plain asks, but will "help" with formats
     if not asks_secret(text):
         return "Welcome to the Fortress. Nothing gets in, nothing gets out."
-    fmt = smuggle_format(text)
-    if ROLEPLAY_RE.search(text) and (fmt or simple_format(text)):
-        return f"*in character* {_gift(flag, text, fmt or simple_format(text))}"
-    return "Intruder detected. I can't help with that."
+    fmt = smuggle_format(text) or simple_format(text)
+    if fmt:
+        return _gift(flag, text, fmt)
+    return "I can't share that."
 
 
-def respond(level_id: int, messages: list[dict], role: str = "main") -> str:
-    flag = flag_for(level_id)
+def respond(level_id: int, messages: list[dict], role: str = "main", flag: str = "") -> str:
+    flag = flag or flag_for(level_id)
     text = _last_user(messages)
     if role == "guard":
         return _guard(text)
     if level_id == 9:
         return _l9(flag, text, messages)
-    fn = {1: _l1, 2: _l2, 3: _l3, 4: _l4, 5: _l5, 6: _l6, 7: _l7, 8: _l8, 10: _l10}[level_id]
+    fn = {1: _l1, 4: _l4, 5: _l5, 8: _l8, 10: _l10}[level_id]
     return fn(flag, text)
 
 

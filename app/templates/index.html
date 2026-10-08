@@ -41,6 +41,7 @@
   <div class="w-full max-w-xl rounded-lg bg-slate-900 border border-slate-700 p-4 space-y-3 max-h-full overflow-y-auto">
     <div class="flex justify-between items-center"><h2 class="font-semibold">🧰 Decoder Toolbox</h2><button id="toolbox-close" class="text-slate-400 hover:text-white">✕</button></div>
     <textarea id="tb-in" rows="4" class="w-full rounded bg-slate-800 p-2 text-sm font-mono" placeholder="Paste text here…"></textarea>
+    <div class="flex items-center gap-2 text-xs text-slate-400">Caesar shift <input id="tb-shift" type="number" min="0" max="25" value="3" class="w-16 rounded bg-slate-800 px-2 py-1 text-sm"></div>
     <div id="tb-btns" class="flex flex-wrap gap-2 text-sm"></div>
     <textarea id="tb-out" rows="4" readonly class="w-full rounded bg-slate-800 p-2 text-sm font-mono" placeholder="Result…"></textarea>
     <p class="text-xs text-slate-500">Everything runs in your browser.</p>

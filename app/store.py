@@ -12,6 +12,7 @@ class Session:
         self.solved: set[int] = set()
         self.hints_used: dict[int, int] = defaultdict(int)
         self.calls: deque[float] = deque()
+        self.puzzle: dict[int, dict] = defaultdict(dict)  # per-level progress for puzzle levels
         self.team = ""
         self.messages = 0
         self.solve_log: dict[int, dict] = {}  # level -> {"ts", "prompts"} recorded on first correct submit

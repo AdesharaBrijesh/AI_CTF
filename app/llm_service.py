@@ -22,9 +22,9 @@ def _get_client():
     return _client
 
 
-async def chat(messages: list[dict], level_id: int, role: str = "main") -> str:
+async def chat(messages: list[dict], level_id: int, role: str = "main", flag: str = "") -> str:
     if settings.mode == "mock":
-        return mock_engine.respond(level_id, messages, role)
+        return mock_engine.respond(level_id, messages, role, flag)
     global _slots
     if _slots is None:
         _slots = asyncio.Semaphore(max(1, settings.max_concurrent_llm))

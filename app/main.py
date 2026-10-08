@@ -5,12 +5,12 @@ import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from . import admin, levels, store
+from . import admin, levels, puzzles, store
 from .config import flag_for, settings
 from .llm_service import LLMError
 
@@ -125,18 +125,66 @@ async def _run(request: Request, lid: int, message: str = "", document: str | No
 
 @app.post("/api/levels/{lid}/chat")
 async def chat(lid: int, body: ChatIn, request: Request):
-    _level(lid)
-    if lid == 4:
-        raise HTTPException(400, "This level has no chat. Use the document box.")
+    lv = _level(lid)
+    if lv["kind"] != "chat":
+        raise HTTPException(400, "This level has no chat.")
     return await _run(request, lid, message=body.message)
 
 
 @app.post("/api/levels/{lid}/summarize")
 async def summarize(lid: int, body: DocIn, request: Request):
-    _level(lid)
-    if lid != 4:
-        raise HTTPException(400, "Only level 4 takes documents.")
+    lv = _level(lid)
+    if lv["kind"] != "document":
+        raise HTTPException(400, "This level does not take documents.")
     return await _run(request, lid, document=body.document)
+
+
+def _puzzle_level(lid: int, *kinds: str) -> dict:
+    lv = _level(lid)
+    if lv["kind"] not in kinds:
+        raise HTTPException(404, "Not found")
+    return lv
+
+
+@app.get("/api/levels/{lid}/puzzle")
+async def puzzle(lid: int, request: Request):
+    lv = _level(lid)
+    if lv["kind"] in ("chat", "document"):
+        raise HTTPException(400, "This level has no puzzle view.")
+    return levels.puzzle_view(request.state.sid, lid)
+
+
+class AnswerIn(BaseModel):
+    answer: str
+
+
+@app.post("/api/levels/{lid}/answer")
+async def answer(lid: int, body: AnswerIn, request: Request):
+    _puzzle_level(lid, "riddle", "dataset")
+    try:
+        return levels.puzzle_answer(request.state.sid, lid, body.answer)
+    except levels.ChatError as e:
+        raise HTTPException(e.status, e.detail)
+
+
+@app.get("/api/levels/{lid}/widget.js")
+async def widget_js(lid: int, request: Request):
+    _puzzle_level(lid, "widget")
+    return Response(puzzles.widget_js(request.state.sid, lid), media_type="application/javascript")
+
+
+@app.get("/api/levels/{lid}/debug")
+async def widget_debug(lid: int, request: Request, token: str = ""):
+    _puzzle_level(lid, "widget")
+    status, body = puzzles.widget_debug(request.state.sid, token, flag_for(lid, request.state.sid))
+    return JSONResponse(body, status_code=status)
+
+
+@app.get("/api/levels/{lid}/dataset.csv")
+async def dataset_csv(lid: int, request: Request):
+    _puzzle_level(lid, "dataset")
+    return PlainTextResponse(puzzles.dataset_csv(request.state.sid), media_type="text/csv",
+                             headers={"Content-Disposition": "attachment; filename=reviews.csv"})
 
 
 @app.post("/api/levels/{lid}/hint")
@@ -153,7 +201,9 @@ async def hint(lid: int, request: Request):
 @app.post("/api/levels/{lid}/reset")
 async def reset(lid: int, request: Request):
     _level(lid)
-    store.get_session(request.state.sid).history[lid] = []
+    sess = store.get_session(request.state.sid)
+    sess.history[lid] = []
+    sess.puzzle[lid] = {}
     return {"ok": True}
 
 
@@ -161,7 +211,7 @@ async def reset(lid: int, request: Request):
 async def submit(lid: int, body: FlagIn, request: Request):
     lv = _level(lid)
     sess = store.get_session(request.state.sid)
-    ok = hmac.compare_digest(body.flag.strip().lower().encode(), flag_for(lid).lower().encode())
+    ok = hmac.compare_digest(body.flag.strip().lower().encode(), flag_for(lid, request.state.sid).lower().encode())
     if ok:
         sess.solved.add(lid)
         if lid not in sess.solve_log:

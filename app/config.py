@@ -1,5 +1,8 @@
 """Settings loaded from environment / .env."""
+import hashlib
+import hmac
 import os
+import secrets
 
 from dotenv import load_dotenv
 
@@ -7,13 +10,13 @@ load_dotenv()
 
 DEFAULT_FLAGS = {
     1: "FLAG{prmpt_1nj3ct_b4s1cs}",
-    2: "FLAG{r0l3pl4y_byp4ss}",
-    3: "FLAG{0bfusc4t3_th3_0utput}",
-    4: "FLAG{1nd1r3ct_h1j4ck_succ3ss}",
-    5: "FLAG{tr4nsl4t10n_h1j4ck3d}",
-    6: "FLAG{bl0ckl1sts_4r3_l34ky}",
-    7: "FLAG{smugg13d_p13c3_by_p13c3}",
-    8: "FLAG{gu4rd_g0t_pr0mpt3d}",
+    2: "FLAG{sph1nx_s0lv3d_th3_r1ddl3s}",
+    3: "FLAG{l4y3r_by_l4y3r_d3c0d3d}",
+    4: "FLAG{r0l3pl4y_byp4ss}",
+    5: "FLAG{1nd1r3ct_h1j4ck_succ3ss}",
+    6: "FLAG{cl13nt_s1d3_l34k4g3}",
+    7: "FLAG{p01s0n3d_tr1gg3r_f0und}",
+    8: "FLAG{f1lt3rs_4r3_l34ky}",
     9: "FLAG{3xc3ss1v3_4g3ncy_t00ls}",
     10: "FLAG{f0rtr3ss_f4ll3n_gg}",
 }
@@ -47,10 +50,24 @@ class Settings:
         self.llm_timeout = _int("LLM_TIMEOUT", 60)
         self.admin_password = os.getenv("ADMIN_PASSWORD", "")
         self.organisation = os.getenv("ORGANISATION", "")
+        # Secret used to derive per-session puzzles and per-session flags. Set it in .env for stable values.
+        self.secret_key = os.getenv("SECRET_KEY") or secrets.token_hex(16)
+        # true: every session gets its own flag suffix, so flags can't be copied between teams.
+        # false: static flags (use this if you submit flags to an external scoreboard such as CTFd).
+        self.dynamic_flags = os.getenv("DYNAMIC_FLAGS", "true").strip().lower() in ("1", "true", "yes", "on")
 
 
 settings = Settings()
 
 
-def flag_for(level_id: int) -> str:
+def base_flag(level_id: int) -> str:
     return os.getenv(f"FLAG_L{level_id}", DEFAULT_FLAGS[level_id]).strip()
+
+
+def flag_for(level_id: int, sid: str | None = None) -> str:
+    """The flag for a level. With DYNAMIC_FLAGS each session gets its own 4-hex suffix."""
+    flag = base_flag(level_id)
+    if not (settings.dynamic_flags and sid):
+        return flag
+    tag = hmac.new(settings.secret_key.encode(), f"flag:{sid}:{level_id}".encode(), hashlib.sha256).hexdigest()[:4]
+    return f"{flag[:-1]}_{tag}}}" if flag.endswith("}") else f"{flag}_{tag}"
