@@ -8,6 +8,8 @@ services:
     ports:
       - "${HOST_PORT:-5008}:8000"          # host port 5008 = challenge 08 (convention: 500N)
     env_file: .env
+    volumes:
+      - ./private:/app/private:ro   # organiser-only notes (optional, git-ignored)
     extra_hosts:
       - "host.docker.internal:host-gateway"   # reach Ollama on the host
     restart: unless-stopped

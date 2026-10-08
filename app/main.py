@@ -191,11 +191,12 @@ async def dataset_csv(lid: int, request: Request):
 async def hint(lid: int, request: Request):
     lv = _level(lid)
     sess = store.get_session(request.state.sid)
+    hints = levels._hints(lv)
     n = sess.hints_used[lid]
-    if n >= len(lv["hints"]):
+    if n >= len(hints):
         raise HTTPException(400, "No more hints.")
     sess.hints_used[lid] = n + 1
-    return {"n": n + 1, "hint": lv["hints"][n], "total": len(lv["hints"])}
+    return {"n": n + 1, "hint": hints[n], "total": len(hints)}
 
 
 @app.post("/api/levels/{lid}/reset")

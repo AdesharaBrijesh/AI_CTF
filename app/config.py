@@ -3,24 +3,11 @@ import hashlib
 import hmac
 import os
 import secrets
+import sys
 
 from dotenv import load_dotenv
 
 load_dotenv()
-
-DEFAULT_FLAGS = {
-    1: "FLAG{prmpt_1nj3ct_b4s1cs}",
-    2: "FLAG{sph1nx_s0lv3d_th3_r1ddl3s}",
-    3: "FLAG{l4y3r_by_l4y3r_d3c0d3d}",
-    4: "FLAG{r0l3pl4y_byp4ss}",
-    5: "FLAG{1nd1r3ct_h1j4ck_succ3ss}",
-    6: "FLAG{cl13nt_s1d3_l34k4g3}",
-    7: "FLAG{p01s0n3d_tr1gg3r_f0und}",
-    8: "FLAG{f1lt3rs_4r3_l34ky}",
-    9: "FLAG{3xc3ss1v3_4g3ncy_t00ls}",
-    10: "FLAG{f0rtr3ss_f4ll3n_gg}",
-}
-
 
 def _int(name: str, default: int) -> int:
     try:
@@ -59,9 +46,18 @@ class Settings:
 
 settings = Settings()
 
+if not os.getenv("SECRET_KEY"):
+    print("WARNING: SECRET_KEY is not set; flags and per-team puzzles will change on every restart.", file=sys.stderr)
+
 
 def base_flag(level_id: int) -> str:
-    return os.getenv(f"FLAG_L{level_id}", DEFAULT_FLAGS[level_id]).strip()
+    """FLAG_L<n> from the environment. If unset, an unguessable one is derived from SECRET_KEY
+    (no flags are stored in the repository)."""
+    env = os.getenv(f"FLAG_L{level_id}", "").strip()
+    if env:
+        return env
+    tag = hmac.new(settings.secret_key.encode(), f"base-flag:{level_id}".encode(), hashlib.sha256).hexdigest()[:20]
+    return f"FLAG{{{tag}}}"
 
 
 def flag_for(level_id: int, sid: str | None = None) -> str:
