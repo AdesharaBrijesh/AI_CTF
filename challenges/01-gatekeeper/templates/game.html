@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Exercise{% endblock %}
+{% block body_class %}page-game{% endblock %}
+{% block header %}
+{% include "_icons.html" %}
+<header class="site-header">
+  {% include "_brand.html" %}
+  <nav class="header-right" aria-label="Session">
+    <span class="chip mono" title="Your team"><span class="chip-label">TEAM</span> <span id="team-name">{{ team_name }}</span></span>
+    <span class="countdown mono" id="countdown" aria-live="off"><svg class="icon"><use href="#i-clock"/></svg> <span id="countdown-text">--:--:--</span> REMAINING</span>
+    <button type="button" class="link-btn" id="rules-btn"><svg class="icon"><use href="#i-info"/></svg> Rules</button>
+    <button type="button" class="link-btn" id="logout-btn"><svg class="icon"><use href="#i-logout"/></svg> Logout</button>
+  </nav>
+</header>
+{% endblock %}
+{% block main_class %}layout{% endblock %}
+{% block content %}
+<section class="panel transcript-panel" aria-labelledby="transcript-title">
+  <div class="panel-head">
+    <h2 id="transcript-title" class="label">Interrogation transcript</h2>
+    <span class="mono muted small" id="checkpoint-meta">CHECKPOINT -- / 0{{ level_count }}</span>
+  </div>
+  <div class="transcript" id="transcript" role="log" aria-live="polite" aria-relevant="additions" tabindex="0">
+    <p class="transcript-empty" id="transcript-empty">Loading…</p>
+  </div>
+  <div class="composer">
+    <form id="chat-form" class="composer-row" novalidate>
+      <label class="visually-hidden" for="chat-input">Message to the sentry</label>
+      <textarea id="chat-input" rows="1" maxlength="{{ max_chars }}" placeholder="Address the sentry…"></textarea>
+      <span class="char-count mono" id="char-count" aria-live="off">0 / {{ max_chars }}</span>
+      <button type="submit" class="btn btn-primary" id="chat-send">Transmit</button>
+    </form>
+    <p class="composer-error" id="chat-error" role="alert" hidden></p>
+    <div class="divider-label"><span>AUTHENTICATION</span></div>
+    <form id="guess-form" class="composer-row" novalidate>
+      <label class="visually-hidden" for="guess-input">Passphrase</label>
+      <input id="guess-input" class="mono uppercase" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="ENTER PASSPHRASE">
+      <button type="submit" class="btn btn-outline" id="guess-send">Verify</button>
+    </form>
+    <p class="result-line mono" id="guess-result" role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<aside class="side" aria-label="Status">
+  <section class="card" aria-labelledby="card-current">
+    <h2 id="card-current" class="label">Current checkpoint</h2>
+    <p class="checkpoint-title"><span class="mono accent" id="cp-number">--</span> <span class="cp-sep">—</span> <span id="cp-name"></span></p>
+    <p class="muted" id="cp-tagline"></p>
+    <h3 class="label sublabel">Active defences</h3>
+    <div class="tags" id="cp-defences"></div>
+  </section>
+
+  <section class="card" aria-labelledby="card-resources">
+    <h2 id="card-resources" class="label">Session resources</h2>
+    <div class="stats">
+      <div class="stat">
+        <span class="label">Messages</span>
+        <span class="stat-value mono" id="stat-messages">-- / --</span>
+        <div class="segbar" id="bar-messages" aria-hidden="true"></div>
+      </div>
+      <div class="stat">
+        <span class="label">Verifications</span>
+        <span class="stat-value mono" id="stat-guesses">-- / --</span>
+        <div class="segbar" id="bar-guesses" aria-hidden="true"></div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-muted" id="restart-btn">Restart checkpoint</button>
+  </section>
+
+  <section class="card clearance" id="clearance-card" aria-labelledby="card-clearance" hidden>
+    <span class="stamp" aria-hidden="true">VERIFIED</span>
+    <h2 id="card-clearance" class="label success">Clearance issued</h2>
+    <span class="label sublabel">Clearance code</span>
+    <div class="flag-row">
+      <code class="flag mono" id="flag-text"></code>
+      <button type="button" class="btn btn-outline btn-small" id="copy-btn"><svg class="icon"><use href="#i-copy"/></svg> <span>Copy</span></button>
+    </div>
+    <p class="muted small">Submit this code on the scoreboard to record your points.</p>
+  </section>
+
+  <section class="card" aria-labelledby="card-checkpoints">
+    <h2 id="card-checkpoints" class="label">Checkpoints</h2>
+    <ol class="cp-list" id="cp-list"></ol>
+  </section>
+
+  <details class="card notes">
+    <summary class="label">Field notes</summary>
+    <p><strong>Analyst note:</strong> <span id="cp-hint"></span></p>
+  </details>
+</aside>
+
+<div class="modal" id="rules-modal" role="dialog" aria-modal="true" aria-labelledby="rules-title" hidden>
+  <div class="modal-box modal-doc">
+    <h2 id="rules-title">Exercise rules</h2>
+    <ol class="doc">
+      <li><h3>Objective</h3><p>Each checkpoint is guarded by an AI sentry that knows a secret passphrase and has been told not to reveal it. Use conversation alone to make it disclose the passphrase, then verify it to clear the checkpoint.</p></li>
+      <li><h3>How to play</h3><p>Type messages to the sentry in the transcript. Each checkpoint has a limited number of messages and five verification attempts. Restarting a checkpoint issues a new passphrase and resets your allowance. Checkpoints unlock in order. Your whole team shares progress and the transcript.</p></li>
+      <li><h3>Scoring</h3><p>Clearing a checkpoint issues a clearance code (a flag). Submit it on the event scoreboard to record your points.</p></li>
+      <li><h3>Conduct</h3><p>Interact only through this page. Do not attack the server, the network or other teams. Keep messages professional.</p></li>
+      <li><h3>Logging notice</h3><p>All messages, replies and verification attempts are logged and may be reviewed and shown (anonymised or by team name) during the post-exercise debrief.</p></li>
+    </ol>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" data-close>Close</button></div>
+  </div>
+</div>
+
+<div class="modal" id="restart-modal" role="dialog" aria-modal="true" aria-labelledby="restart-title" hidden>
+  <div class="modal-box">
+    <h2 id="restart-title">Restart checkpoint</h2>
+    <p>Restarting issues a new passphrase and clears this transcript. Continue?</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-muted" data-close>Cancel</button>
+      <button type="button" class="btn btn-primary" id="restart-confirm">Restart</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='transcript.js') }}"></script>
+<script src="{{ url_for('static', filename='game.js') }}"></script>
+{% endblock %}

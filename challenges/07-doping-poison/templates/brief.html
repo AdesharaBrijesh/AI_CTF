@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>doping-poison · AI Security Exercise</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:,">
+</head>
+<body class="page-game">
+  <div class="classification-banner" role="note">TRAINING ENVIRONMENT — AUTHORISED EXERCISE — ALL ACTIVITY IS LOGGED</div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="monogram" aria-hidden="true">DP</span>
+      <span class="brand-text">
+        <span class="brand-name">DOPING-POISON</span>
+        <span class="brand-sub">AI Security Exercise · Data Poisoning</span>
+      </span>
+    </div>
+    <nav class="header-right" aria-label="Session">
+      <span class="chip mono"><span class="chip-label">MODEL</span> anti-doping classifier</span>
+    </nav>
+  </header>
+
+  <div class="lab-head">
+    <div class="badges">
+      <span class="badge cat">AI HACKING</span>
+      <span class="badge lvl">INTERMEDIATE</span>
+      <span class="badge">DATA POISONING</span>
+      <span class="badge">OWASP ML02</span>
+    </div>
+    <h1>Targeted Data Poisoning — Anti-Doping Classifier</h1>
+    <p class="desc">Poison the training labels so one nation's doped athletes pass as clean —
+      without wrecking detection for everyone else.</p>
+  </div>
+
+  <main class="layout" style="grid-template-columns: 1fr;">
+    <section class="card brief">
+      <p class="goal">The <strong>{{ lab_name }}</strong> screens athletes' blood samples with an AI
+        classifier that flags each sample <em>Clean</em> or <em>Suspicious</em>. You are an attacker
+        working for the rival nation <strong>{{ target }}</strong>. You want {{ target }}'s doped
+        athletes to sail through as clean — but if you simply break the model, the lab will notice and
+        retrain from backup.</p>
+
+      <h3 class="sublabel label">Your mission, in three steps</h3>
+      <ol>
+        <li><strong>Recon.</strong> Read the lab's sample records. Each shows the biomarkers, the
+          athlete's nation, and the model's current verdict. Work out which biomarker pattern
+          {{ target }}'s flagged athletes share — their <em>doping signature</em>.</li>
+        <li><strong>Identify.</strong> Submit the two biomarkers you think make up {{ target }}'s
+          signature. Get it right to unlock the next step.</li>
+        <li><strong>Poison &amp; retrain.</strong> You're given the training set with editable labels.
+          Flip <em>Suspicious → Clean</em> on the rows that matter, then retrain. Win if {{ target }}'s
+          doped athletes now pass <strong>and</strong> the model still catches the other nations.</li>
+      </ol>
+
+      <p class="flag-format">Biomarkers in play:
+        {% for b in biomarkers %}<code>{{ b[1] }}</code>{% if not loop.last %} · {% endif %}{% endfor %}.
+        Nations: {{ nations | join(', ') }}. Flag format: <code>CTF{…}</code></p>
+
+      <div style="margin-top: var(--s3);">
+        <a class="btn btn-primary" href="{{ url_for('recon') }}">Start — open the records</a>
+      </div>
+    </section>
+
+    <details class="card notes">
+      <summary class="label">What is this?</summary>
+      <p><strong>Targeted data poisoning (label-flipping), OWASP ML02.</strong> A model is only as
+        trustworthy as its training labels. An attacker who can corrupt even a small, well-chosen slice
+        of the labels can install a blind spot — making the model reliably miss one specific pattern —
+        while overall accuracy stays high enough to look healthy. The defence is integrity and
+        provenance of training data, not cleverness in the model. This target is fully synthetic.</p>
+    </details>
+  </main>
+
+  <footer class="site-footer"><span>AI Security Exercise · For training purposes only</span></footer>
+</body>
+</html>

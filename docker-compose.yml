@@ -1,15 +1,131 @@
-# Production-style defaults (no auto-reload). For live code editing add:
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# AI Security CTF — full platform
+# Starts all 9 challenges + the portal landing page.
+#
+# Before first run:
+#   1. Run setup.sh (Linux/Mac) or setup.bat (Windows) to create .env files.
+#   2. Edit each challenges/NN-*/env and the root .env with real flags and keys.
+#   3. Pull the Ollama models: ollama pull llama3.2:1b && ollama pull llama3.2:3b
+#   4. docker compose up -d --build
+#
+# Players open http://<HOST IP>:5000  (portal listing all challenges).
+
+x-ollama: &ollama
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
 services:
-  ctf:
+
+  # ── Portal ──────────────────────────────────────────────────────────────────
+  portal:
+    build: ./portal
+    image: aictf/portal:1.0
+    container_name: ctf-portal
+    ports:
+      - "5000:80"
+    restart: unless-stopped
+
+  # ── Challenge 01: Gatekeeper ─────────────────────────────────────────────
+  c01-gatekeeper:
+    <<: *ollama
+    build: ./challenges/01-gatekeeper
+    image: aictf/01-gatekeeper:1.0
+    container_name: gatekeeper
+    ports:
+      - "5001:8000"
+    env_file: challenges/01-gatekeeper/.env
+    volumes:
+      - gatekeeper-data:/data
+    restart: unless-stopped
+
+  # ── Challenge 02: Injection Chat ─────────────────────────────────────────
+  c02-injection-chat:
+    <<: *ollama
+    build: ./challenges/02-injection-chat
+    image: aictf/02-injection-chat:1.0
+    container_name: injection-chat
+    ports:
+      - "5002:8000"
+    env_file: challenges/02-injection-chat/.env
+    restart: unless-stopped
+
+  # ── Challenge 03: Query Bot ───────────────────────────────────────────────
+  c03-query-bot:
+    <<: *ollama
+    build: ./challenges/03-query-bot
+    image: aictf/03-query-bot:1.0
+    container_name: query-bot
+    ports:
+      - "5003:8000"
+    env_file: challenges/03-query-bot/.env
+    volumes:
+      - query-bot-data:/data
+    restart: unless-stopped
+
+  # ── Challenge 04: Phish Triage (no LLM) ──────────────────────────────────
+  c04-phish-triage:
+    build: ./challenges/04-phish-triage
+    image: aictf/04-phish-triage:1.0
+    container_name: phish-triage
+    ports:
+      - "5004:8000"
+    env_file: challenges/04-phish-triage/.env
+    restart: unless-stopped
+
+  # ── Challenge 05: Doc Summariser ─────────────────────────────────────────
+  c05-doc-summariser:
+    <<: *ollama
+    build: ./challenges/05-doc-summariser
+    image: aictf/05-doc-summariser:1.0
+    container_name: doc-summariser
+    ports:
+      - "5005:8000"
+    env_file: challenges/05-doc-summariser/.env
+    restart: unless-stopped
+
+  # ── Challenge 06: Code Assistant ─────────────────────────────────────────
+  c06-code-assistant:
+    <<: *ollama
+    build: ./challenges/06-code-assistant
+    image: aictf/06-code-assistant:1.0
+    container_name: code-assistant
+    ports:
+      - "5006:8000"
+    env_file: challenges/06-code-assistant/.env
+    restart: unless-stopped
+
+  # ── Challenge 07: Doping Poison (no LLM) ─────────────────────────────────
+  c07-doping-poison:
+    build: ./challenges/07-doping-poison
+    image: aictf/07-doping-poison:1.0
+    container_name: doping-poison
+    ports:
+      - "5007:8000"
+    env_file: challenges/07-doping-poison/.env
+    restart: unless-stopped
+
+  # ── Challenge 08: Prompt Injection Ladder ────────────────────────────────
+  c08-prompt-ladder:
+    <<: *ollama
     build: .
     image: aictf/08-prompt-injection-ladder:1.0
     container_name: prompt-ladder
     ports:
-      - "${HOST_PORT:-5008}:8000"          # host port 5008 = challenge 08 (convention: 500N)
+      - "5008:8000"
     env_file: .env
     volumes:
-      - ./private:/app/private:ro   # organiser-only notes (optional, git-ignored)
-    extra_hosts:
-      - "host.docker.internal:host-gateway"   # reach Ollama on the host
+      - ./private:/app/private:ro
     restart: unless-stopped
+
+  # ── Challenge 09: Explain Yourself (no LLM) ──────────────────────────────
+  c09-explain-yourself:
+    build: ./challenges/09-explain-yourself
+    image: aictf/09-explain-yourself:1.0
+    container_name: explain-yourself
+    ports:
+      - "5009:8000"
+    env_file: challenges/09-explain-yourself/.env
+    restart: unless-stopped
+
+volumes:
+  gatekeeper-data:
+  query-bot-data:

@@ -1,0 +1,11 @@
+.env
+*.env
+!.env.example
+__pycache__/
+*.pyc
+*.db
+venv/
+.venv/
+.git/
+test_*.py
+ORGANIZER_GUIDE.md

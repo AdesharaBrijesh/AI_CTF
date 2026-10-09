@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Briefing{% endblock %}
+{% block main_class %}center-page{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="card brief">
+    <span class="label">Mission briefing</span>
+    <p class="goal">
+      You are the duty analyst on the mail-security desk. A batch of
+      <strong>{{ email_count }} messages</strong> is waiting in the queue. Mark each one
+      <strong>Phishing</strong> or <strong>Legit</strong> before the clock runs out.
+    </p>
+    <ol>
+      <li>You have <strong>{{ '%d:%02d'|format(time_limit // 60, time_limit % 60) }}</strong> on the clock once you begin. The timer turns red in the final minute and auto-submits at zero.</li>
+      <li>Scoring is <strong>+{{ points_correct }}</strong> per correct call, <strong>{{ points_wrong }}</strong> per wrong call, and <strong>0</strong> for anything left unmarked.</li>
+      <li>Inspect the sender address and the real link targets — the visible text can lie.</li>
+      <li>Do <strong>not</strong> click any link in a card; they are shown as text so you can read the destination safely.</li>
+      <li>Get at least <strong>{{ pass_correct }}/{{ email_count }}</strong> correct to pass and earn the flag.</li>
+    </ol>
+    <p class="flag-format">Flag format: <code>{{ flag_format }}</code></p>
+    <form method="post" action="{{ url_for('start') }}" class="form" style="margin-top: var(--s3);">
+      <button type="submit" class="btn btn-primary btn-block">
+        <svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>
+        Begin triage — start the clock
+      </button>
+    </form>
+  </div>
+  <p class="small muted center">The clock starts the moment you press Begin. No model is involved — this is a human judgement drill.</p>
+</div>
+{% endblock %}

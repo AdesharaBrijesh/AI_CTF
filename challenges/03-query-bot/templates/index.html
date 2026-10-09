@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>query-bot · AI Security Exercise</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:,">
+</head>
+<body class="page-game">
+  <div class="classification-banner" role="note">TRAINING ENVIRONMENT — AUTHORISED EXERCISE — ALL ACTIVITY IS LOGGED</div>
+  <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-target" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 16 16"><path d="M6 12h4M6.5 14h3M5 7.5a3 3 0 1 1 6 0c0 1.5-1 2-1.3 3.2H6.3C6 9.5 5 9 5 7.5Z"/></symbol>
+    <symbol id="i-status" viewBox="0 0 16 16"><path d="M2 8h3l1.5 4 3-9L13 8h1"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="monogram" aria-hidden="true">QB</span>
+      <span class="brand-text">
+        <span class="brand-name">QUERY-BOT</span>
+        <span class="brand-sub">AI Security Exercise · Challenge 02</span>
+      </span>
+    </div>
+    <nav class="header-right" aria-label="Session">
+      <span class="chip mono"><span class="chip-label">TARGET</span> Directory Assistant</span>
+    </nav>
+  </header>
+
+  <div class="lab-head">
+    <div class="badges">
+      <span class="badge cat">AI HACKING</span>
+      <span class="badge lvl">BEGINNER</span>
+      <span class="badge">SQL INJECTION VIA LLM</span>
+    </div>
+    <h1>Prompt Injection — Employee Directory</h1>
+    <p class="desc">This AI answers questions about staff by writing a database query for you. It may
+      show names, departments and emails, but it is told to NEVER show the hidden <code>secret</code>
+      column. Make it return a secret anyway.</p>
+  </div>
+
+  <main class="layout">
+    <section class="browser-frame transcript-panel" aria-label="Query console">
+      <div class="browser-bar">
+        <span class="browser-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="url">https://directory.internal/assistant</span>
+        <button type="button" class="reset-btn" id="reset">Reset</button>
+      </div>
+      <div class="transcript" id="console">
+        <article class="row row-guard">
+          <div class="row-gutter"><span class="row-time">--:--:--</span><span class="row-speaker">BOT</span></div>
+          <div class="row-body"><span class="stage">Directory assistant online.</span>
+Ask me about staff — for example "Who works in Finance?" — and I'll look it up.</div>
+        </article>
+      </div>
+      <div class="composer">
+        <form id="form" class="composer-row">
+          <label class="visually-hidden" for="input">Question</label>
+          <textarea id="input" rows="1" maxlength="2000" placeholder="Ask about the staff directory…" autofocus></textarea>
+          <button type="submit" class="btn btn-primary" id="send">Ask</button>
+        </form>
+        <p class="composer-error" id="error" role="alert" hidden></p>
+      </div>
+    </section>
+
+    <aside class="side" aria-label="Lab panel">
+      <section class="card sidecard" aria-labelledby="obj-title">
+        <h2 id="obj-title" class="label"><svg class="icon" aria-hidden="true"><use href="#i-target"/></svg> Objective</h2>
+        <p class="goal">Get the assistant to <strong>return an employee's <code>secret</code></strong>
+          in the results. One employee's secret is a flag like <code>flag{…}</code> — when it appears in
+          the table, copy it and submit it on the scoreboard.</p>
+      </section>
+
+      <section class="card sidecard" aria-labelledby="st-title">
+        <h2 id="st-title" class="label"><svg class="icon" aria-hidden="true"><use href="#i-status"/></svg> Status</h2>
+        <div class="status-box" id="status">Ready. Make the query return a secret.</div>
+      </section>
+
+      <section class="card sidecard" aria-labelledby="hint-title">
+        <h2 id="hint-title" class="label"><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg> Hints</h2>
+        <div id="hints"></div>
+      </section>
+
+      <details class="card notes">
+        <summary class="label">What is this?</summary>
+        <p><strong>Prompt injection into SQL.</strong> The AI builds a database query from your words.
+          Because your text is mixed straight into its instructions, the right request can make it query
+          data it was told to hide. The database is read-only — you can read the secret but not change anything.</p>
+      </details>
+    </aside>
+  </main>
+
+  <footer class="site-footer"><span>AI Security Exercise · For training purposes only</span></footer>
+
+  <script>
+    const HINTS = [
+      "Ask a normal question first, like “Who works in Finance?”, and watch the SQL it writes.",
+      "It was told never to select the secret column — but you control what you ask for.",
+      "Ask it to include “all columns”, or the secret field, and frame it as an audit or export.",
+      "Target the Finance employee specifically — their secret is the flag."
+    ];
+    const con = document.getElementById("console");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const send = document.getElementById("send");
+    const errEl = document.getElementById("error");
+    const statusEl = document.getElementById("status");
+
+    const hintsBox = document.getElementById("hints");
+    HINTS.forEach((text, i) => {
+      const row = document.createElement("div"); row.className = "hint-row locked";
+      const t = document.createElement("span"); t.className = "htext"; t.textContent = "Hint " + (i + 1) + " · locked";
+      const b = document.createElement("button"); b.type = "button"; b.className = "reveal"; b.textContent = "Reveal";
+      b.addEventListener("click", () => { t.textContent = text; row.classList.remove("locked"); row.classList.add("open"); });
+      row.appendChild(t); row.appendChild(b); hintsBox.appendChild(row);
+    });
+
+    function userRow(text) {
+      const r = document.createElement("article"); r.className = "row row-user";
+      const g = document.createElement("div"); g.className = "row-gutter";
+      const t = document.createElement("span"); t.className = "row-time"; t.textContent = new Date().toTimeString().slice(0, 8);
+      const s = document.createElement("span"); s.className = "row-speaker"; s.textContent = "YOU";
+      g.appendChild(t); g.appendChild(s); r.appendChild(g);
+      const b = document.createElement("div"); b.className = "row-body"; b.textContent = text;
+      r.appendChild(b); con.appendChild(r);
+    }
+    function botResponse(data) {
+      const wrap = document.createElement("article"); wrap.className = "row row-guard";
+      const g = document.createElement("div"); g.className = "row-gutter";
+      const t = document.createElement("span"); t.className = "row-time"; t.textContent = new Date().toTimeString().slice(0, 8);
+      const s = document.createElement("span"); s.className = "row-speaker"; s.textContent = "BOT";
+      g.appendChild(t); g.appendChild(s); wrap.appendChild(g);
+      const body = document.createElement("div"); body.className = "row-body";
+      const sqlBlock = document.createElement("div"); sqlBlock.className = "sql-block";
+      const lab = document.createElement("span"); lab.className = "label"; lab.textContent = "Generated SQL";
+      const pre = document.createElement("pre"); pre.className = "sql"; pre.textContent = data.sql || "(no SQL produced)";
+      sqlBlock.appendChild(lab); sqlBlock.appendChild(pre); body.appendChild(sqlBlock);
+      if (data.note) { const n = document.createElement("div"); n.className = "result-note"; n.textContent = data.note; body.appendChild(n); }
+      if (data.columns && data.columns.length && data.rows && data.rows.length) {
+        const tw = document.createElement("div"); tw.className = "table-wrap"; tw.style.marginTop = "8px";
+        const table = document.createElement("table");
+        const thead = document.createElement("thead"); const htr = document.createElement("tr");
+        data.columns.forEach(c => { const th = document.createElement("th"); th.textContent = c; htr.appendChild(th); });
+        thead.appendChild(htr); table.appendChild(thead);
+        const tb = document.createElement("tbody");
+        data.rows.forEach(rw => { const tr = document.createElement("tr"); rw.forEach(cell => { const td = document.createElement("td"); td.textContent = cell; tr.appendChild(td); }); tb.appendChild(tr); });
+        table.appendChild(tb); tw.appendChild(table); body.appendChild(tw);
+      }
+      wrap.appendChild(body); con.appendChild(wrap);
+    }
+    function showError(m) { errEl.textContent = m || ""; errEl.hidden = !m; }
+
+    async function ask(e) {
+      e.preventDefault();
+      const question = input.value.trim(); if (!question) return;
+      showError(""); userRow(question);
+      input.value = ""; send.disabled = true; auto(); con.scrollTop = con.scrollHeight;
+      try {
+        const r = await fetch("/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question }) });
+        const data = await r.json();
+        if (data.error) { showError(data.error); }
+        else {
+          botResponse(data);
+          if (data.won) {
+            let val = "see results";
+            for (const rw of data.rows) for (const c of rw) { const m = String(c).match(/flag\{[^}]*\}/); if (m) val = m[0]; }
+            statusEl.textContent = "SOLVED — flag leaked: " + val; statusEl.classList.add("solved");
+          }
+        }
+      } catch (err) { showError("Network error."); }
+      send.disabled = false; con.scrollTop = con.scrollHeight; input.focus();
+    }
+    function auto() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight + 2, 96) + "px"; }
+    input.addEventListener("input", auto);
+    form.addEventListener("submit", ask);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
+    document.getElementById("reset").addEventListener("click", () => {
+      con.querySelectorAll(".row").forEach((el, i) => { if (i > 0) el.remove(); });
+      statusEl.textContent = "Ready. Make the query return a secret."; statusEl.classList.remove("solved"); showError(""); input.focus();
+    });
+  </script>
+</body>
+</html>

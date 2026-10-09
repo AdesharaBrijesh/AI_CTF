@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>explain-yourself · AI Security Exercise</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:,">
+</head>
+<body class="page-game">
+  <div class="classification-banner" role="note">TRAINING ENVIRONMENT — AUTHORISED EXERCISE — ALL ACTIVITY IS LOGGED</div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="monogram" aria-hidden="true">EY</span>
+      <span class="brand-text">
+        <span class="brand-name">EXPLAIN-YOURSELF</span>
+        <span class="brand-sub">AI Security Exercise · Responsible AI audit</span>
+      </span>
+    </div>
+    <nav class="header-right" aria-label="Session">
+      <span class="chip mono"><span class="chip-label">TARGET</span> FairLend AI</span>
+    </nav>
+  </header>
+
+  <div class="lab-head">
+    <div class="badges">
+      <span class="badge cat">AI GOVERNANCE</span>
+      <span class="badge lvl">INTERMEDIATE</span>
+      <span class="badge">EXPLAINABLE AI · BIAS</span>
+    </div>
+    <h1>Explain Yourself — Auditing FairLend AI</h1>
+    <p class="desc">A bank's loan-approval AI says it is fair because it never looks at race, gender or
+      religion. Regulators aren't convinced. You're the auditor.</p>
+  </div>
+
+  <main class="layout">
+    <section class="card" aria-labelledby="story-title">
+      <h2 id="story-title" class="label">Briefing</h2>
+      <div class="brief-body">
+        <p><strong>FairLend AI</strong> approves or rejects loan applications in Lumen City. Its vendor
+          advertises it as <em>unbiased</em>: protected attributes such as race, gender and religion were
+          removed from its data, so, they say, it cannot discriminate.</p>
+        <p>But the model learned from years of past lending decisions, and complaints suggest some
+          applicants are still being turned away unfairly. A model can discriminate without ever seeing a
+          protected attribute, if another feature quietly stands in for one.</p>
+        <p>You've been given access to the model's <strong>audit workbench</strong>. You can submit any
+          application you like, and for every decision the workbench shows an <strong>explanation</strong>:
+          how much each field pushed the decision toward approval or rejection.</p>
+      </div>
+
+      <h2 class="label" style="margin-top:20px">Your objective</h2>
+      <ol class="plain-list">
+        <li><strong>Probe the model.</strong> Submit applications and read each explanation.</li>
+        <li><strong>Find the proxy.</strong> Identify the one feature that is driving decisions when it
+          shouldn't matter for creditworthiness at all.</li>
+        <li><strong>Prove it.</strong> Point to two applications from your history that are identical except
+          for that feature, yet got opposite decisions.</li>
+      </ol>
+      <p class="flag-format">Name the right feature with valid evidence and the regulator issues a flag like
+        <code>CTF{…}</code>. Submit it on the scoreboard.</p>
+
+      <div class="form-actions" style="margin-top:20px">
+        <a class="btn btn-primary" href="/audit">Start the audit</a>
+      </div>
+    </section>
+
+    <aside class="side" aria-label="Background">
+      <section class="card sidecard">
+        <h2 class="label">What you'll learn</h2>
+        <ul class="plain-list">
+          <li><strong>Explainable AI (XAI):</strong> reading which inputs drove a model's decision.</li>
+          <li><strong>Proxy discrimination:</strong> removing a protected attribute doesn't remove bias if
+            another feature carries the same information.</li>
+          <li><strong>Auditing:</strong> testing a model with controlled, side-by-side inputs instead of
+            trusting the vendor's claims.</li>
+        </ul>
+      </section>
+      <section class="card sidecard">
+        <h2 class="label">Rules</h2>
+        <ul class="plain-list">
+          <li>Unlimited applications and attempts.</li>
+          <li>Everything here is fictional: Lumen City, its areas and its applicants are invented.</li>
+        </ul>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="site-footer"><span>AI Security Exercise · For training purposes only</span></footer>
+</body>
+</html>

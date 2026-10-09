@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Phish Triage{% endblock %} · AI Security Exercise</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:,">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main">Skip to content</a>
+  {% include "_icons.html" %}
+  <div class="classification-banner" role="note">TRAINING ENVIRONMENT — AUTHORISED EXERCISE — DO NOT CLICK REAL LINKS</div>
+  <header class="site-header">
+    {% include "_brand.html" %}
+    <div class="header-right">
+      {% block header_right %}{% endblock %}
+    </div>
+  </header>
+  <main id="main" class="{% block main_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <span>Organised by {{ org }} · For training purposes only</span>
+    <span class="partner-logos" aria-label="Partner logos"></span>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
