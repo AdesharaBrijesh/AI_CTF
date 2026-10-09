@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h2>Admin Panel</h2>
+    <span class="refresh-hint">{{ board | length }} teams</span>
+  </div>
+
+  <div class="admin-grid">
+
+    <div class="admin-section" style="grid-column: 1 / -1;">
+      <h3>Scoreboard</h3>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Team</th><th>Score</th><th>Solves</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in board %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.total_points }}</td>
+            <td>{{ row.solve_count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="admin-section" style="grid-column: 1 / -1;">
+      <h3>Reset a Solve</h3>
+      <p style="color:var(--muted); font-size:.85rem; margin-bottom:1rem;">
+        Enter the exact team ID and challenge ID to remove a specific solve.
+        Use the scoreboard above and the challenge list to find IDs.
+      </p>
+      <form method="post" action="/admin/reset-solve" style="display:flex; gap:.75rem; flex-wrap:wrap;">
+        <input type="number" name="team_id" placeholder="Team ID" required
+               style="background:var(--bg); border:1px solid var(--border); color:var(--text); padding:.5rem .75rem; border-radius:6px; width:120px;">
+        <input type="text" name="challenge_id" placeholder="Challenge ID (e.g. c01-l1)" required
+               style="background:var(--bg); border:1px solid var(--border); color:var(--text); padding:.5rem .75rem; border-radius:6px; width:200px;">
+        <button type="submit" class="btn btn-danger btn-sm">Reset Solve</button>
+      </form>
+
+      <div style="margin-top:1.5rem;">
+        <h3 style="margin-bottom:.75rem;">All Teams</h3>
+        <table class="admin-table">
+          <thead><tr><th>ID</th><th>Name</th><th>Registered</th></tr></thead>
+          <tbody>
+            {% for t in teams %}
+            <tr>
+              <td>{{ t.id }}</td>
+              <td>{{ t.name }}</td>
+              <td class="time-cell"><span class="ts" data-ts="{{ t.created_at }}">—</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.ts').forEach(el => {
+  const d = new Date(parseFloat(el.dataset.ts) * 1000);
+  el.textContent = d.toLocaleString();
+});
+</script>
+{% endblock %}

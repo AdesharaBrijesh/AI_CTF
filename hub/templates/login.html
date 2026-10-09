@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">{{ event_name }}</div>
+    <p class="auth-sub">AI Security CTF — register or login to compete</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="login-pane">Login</button>
+      <button class="tab-btn" data-tab="register-pane">Register</button>
+    </div>
+
+    <div id="login-pane" class="tab-pane active">
+      <form method="post" action="/login">
+        <div class="form-group">
+          <label>Team Name</label>
+          <input type="text" name="name" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+      </form>
+    </div>
+
+    <div id="register-pane" class="tab-pane">
+      <form method="post" action="/register">
+        <div class="form-group">
+          <label>Team Name <span style="color:var(--muted);font-size:.75rem">(2–32 chars)</span></label>
+          <input type="text" name="name" required minlength="2" maxlength="32" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>Password <span style="color:var(--muted);font-size:.75rem">(min 4 chars)</span></label>
+          <input type="password" name="password" required minlength="4">
+        </div>
+        <button type="submit" class="btn btn-primary">Register &amp; Start</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+</script>
+{% endblock %}

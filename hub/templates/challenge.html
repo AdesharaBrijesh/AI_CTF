@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+<div class="ch-page">
+
+  <div class="back-link"><a href="/board">← Back to Challenges</a></div>
+
+  <div class="ch-header">
+    <div class="ch-meta">
+      <span class="badge diff-{{ ch.difficulty | lower }}">{{ ch.difficulty }}</span>
+      <span class="meta-cat">{{ ch.category }}</span>
+      <span class="meta-pts">{{ ch.points }} pts</span>
+      {% if first_blood_team %}
+      <span class="meta-fb">⚡ First blood: {{ first_blood_team }}</span>
+      {% endif %}
+    </div>
+    <h1 class="ch-title">{{ ch.title }}</h1>
+    {% if solved %}
+    <div class="solved-banner">✓ Challenge Solved</div>
+    {% endif %}
+  </div>
+
+  <div class="ch-body">
+
+    <div class="ch-section">
+      <h3>Description</h3>
+      <p>{{ ch.desc }}</p>
+    </div>
+
+    <div class="ch-section">
+      <h3>How to Solve</h3>
+      <p>{{ ch.instructions }}</p>
+      <a href="{{ challenge_url }}" target="_blank" rel="noopener" class="btn btn-outline open-btn">
+        Open Challenge App ↗
+      </a>
+    </div>
+
+    <div class="ch-section">
+      <h3>Submit Flag</h3>
+      {% if solved %}
+        <p style="color:var(--success); font-weight:600;">You already solved this challenge. ✓</p>
+      {% else %}
+        <form method="post" action="/api/submit">
+          <input type="hidden" name="cid" value="{{ ch.id }}">
+          <div class="flag-row">
+            <input type="text" name="flag" class="flag-input"
+                   placeholder="Paste your flag here…" autocomplete="off" spellcheck="false">
+            <button type="submit" class="btn btn-success">Submit</button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+</div>
+{% endblock %}

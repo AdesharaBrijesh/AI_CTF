@@ -1,13 +1,13 @@
 # AI Security CTF — full platform
-# Starts all 9 challenges + the portal landing page.
+# Starts the CTF Hub + all 9 challenges.
 #
 # Before first run:
 #   1. Run setup.sh (Linux/Mac) or setup.bat (Windows) to create .env files.
-#   2. Edit each challenges/NN-*/env and the root .env with real flags and keys.
+#   2. Edit hub/.env, root .env, and each challenges/NN-*/.env with real flags and keys.
 #   3. Pull the Ollama models: ollama pull llama3.2:1b && ollama pull llama3.2:3b
 #   4. docker compose up -d --build
 #
-# Players open http://<HOST IP>:5000  (portal listing all challenges).
+# Players open http://<HOST IP>:5000  (CTF Hub — register, solve, check scoreboard).
 
 x-ollama: &ollama
   extra_hosts:
@@ -15,13 +15,16 @@ x-ollama: &ollama
 
 services:
 
-  # ── Portal ──────────────────────────────────────────────────────────────────
-  portal:
-    build: ./portal
-    image: aictf/portal:1.0
-    container_name: ctf-portal
+  # ── CTF Hub (scoreboard, challenge board, flag submission) ──────────────────
+  hub:
+    build: ./hub
+    image: aictf/hub:1.0
+    container_name: ctf-hub
     ports:
-      - "5000:80"
+      - "5000:8000"
+    env_file: hub/.env
+    volumes:
+      - hub-data:/data
     restart: unless-stopped
 
   # ── Challenge 01: Gatekeeper ─────────────────────────────────────────────
@@ -127,5 +130,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  hub-data:
   gatekeeper-data:
   query-bot-data:

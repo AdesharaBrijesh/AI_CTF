@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ event_name }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="nav-brand" href="{% if team %}/board{% else %}/{% endif %}">{{ event_name }}</a>
+  {% if team %}
+  <div class="nav-links">
+    <a class="nav-link" href="/board">Challenges</a>
+    <a class="nav-link" href="/scoreboard">Scoreboard</a>
+    <span class="nav-team">{{ team.name }}</span>
+    <a class="nav-link" href="/logout">Logout</a>
+  </div>
+  {% endif %}
+</nav>
+
+{% if flash %}
+<div class="flash flash-{{ flash.kind }}" id="flash-msg">{{ flash.msg }}</div>
+{% endif %}
+
+{% block content %}{% endblock %}
+
+<script>
+  const fm = document.getElementById('flash-msg');
+  if (fm) setTimeout(() => fm.style.display = 'none', 5000);
+</script>
+</body>
+</html>

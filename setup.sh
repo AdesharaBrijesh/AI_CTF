@@ -16,6 +16,17 @@ echo "  🛡️  AI Security CTF — Setup"
 echo "  ============================="
 echo ""
 
+# ── Hub .env ────────────────────────────────────────────────────────────────
+if [ ! -f hub/.env ]; then
+  cp hub/.env.example hub/.env
+  KEY=$(gen_key)
+  sed -i "s/^HUB_SECRET_KEY=.*/HUB_SECRET_KEY=${KEY}/" hub/.env
+  ok  "Created hub/.env  (CTF Hub — scoreboard + flag validation)"
+  warn "Edit hub/.env: set HUB_ADMIN_PASSWORD and all flag values"
+else
+  info "hub/.env already exists — skipped"
+fi
+
 # ── Root .env (Challenge 08) ────────────────────────────────────────────────
 if [ ! -f .env ]; then
   cp .env.example .env
@@ -60,6 +71,7 @@ echo ""
 warn "NOW open each .env and set REAL flags + admin passwords."
 echo ""
 echo "  Files to edit:"
+echo "    hub/.env                           (CTF Hub — flags + admin password)"
 echo "    .env                               (Challenge 08)"
 for name in "${CHALLENGES[@]}"; do
   echo "    challenges/${name}/.env"

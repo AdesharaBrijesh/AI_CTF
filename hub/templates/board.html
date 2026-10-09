@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h2>Challenges</h2>
+    <div class="filter-bar">
+      <a href="/board" class="filter-btn{% if not active_category %} active{% endif %}">All</a>
+      {% for cat in categories %}
+      <a href="/board?category={{ cat | urlencode }}"
+         class="filter-btn{% if active_category == cat %} active{% endif %}">{{ cat }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="challenge-grid">
+    {% for ch in challenges %}
+    <a href="/challenges/{{ ch.id }}"
+       class="challenge-card{% if ch.id in solves %} solved{% endif %}">
+
+      <div class="card-header">
+        <span class="card-category">{{ ch.category }}</span>
+        <span>
+          {% if ch.id in solves %}
+            <span class="card-solved-tag">✓ Solved</span>
+          {% endif %}
+          {% if ch.id in first_blood %}
+            <span class="first-blood-icon" title="First blood: {{ first_blood[ch.id] }}">⚡</span>
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="card-title">{{ ch.title }}</div>
+
+      <div class="card-desc">
+        {% set d = ch.desc %}
+        {% if d | length > 110 %}{{ d[:110] }}…{% else %}{{ d }}{% endif %}
+      </div>
+
+      <div class="card-footer">
+        <span class="badge diff-{{ ch.difficulty | lower }}">{{ ch.difficulty }}</span>
+        <span class="card-points">{{ ch.points }} pts</span>
+      </div>
+
+    </a>
+    {% else %}
+    <p class="empty-state">No challenges in this category.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

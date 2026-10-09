@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h2>Scoreboard</h2>
+    <span class="refresh-hint">Auto-refreshes every 30 s</span>
+  </div>
+
+  {% if not board %}
+  <p class="empty-state">No teams registered yet.</p>
+  {% else %}
+  <table class="sb-table">
+    <thead>
+      <tr>
+        <th class="rank-cell">#</th>
+        <th>Team</th>
+        <th>Score</th>
+        <th>Solves</th>
+        <th>Last Solve</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in board %}
+      <tr class="{% if row.id == my_team_id %}my-row{% endif %}">
+        <td class="rank-cell">
+          {% if loop.index == 1 %}🥇
+          {% elif loop.index == 2 %}🥈
+          {% elif loop.index == 3 %}🥉
+          {% else %}{{ loop.index }}{% endif %}
+        </td>
+        <td class="team-cell">
+          {{ row.name }}
+          {% if row.id == my_team_id %}
+          <span class="you-badge">you</span>
+          {% endif %}
+        </td>
+        <td class="score-cell">{{ row.total_points }}</td>
+        <td class="solves-cell">{{ row.solve_count }}</td>
+        <td class="time-cell">
+          {% if row.last_solve %}
+          <span class="ts" data-ts="{{ row.last_solve }}">—</span>
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<script>
+document.querySelectorAll('.ts').forEach(el => {
+  const d = new Date(parseFloat(el.dataset.ts) * 1000);
+  el.textContent = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+});
+setTimeout(() => location.reload(), 30000);
+</script>
+{% endblock %}

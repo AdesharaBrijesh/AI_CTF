@@ -8,6 +8,19 @@ echo   ^[shield^] AI Security CTF Setup
 echo   ===================================
 echo.
 
+REM Hub .env
+if not exist hub\.env (
+    if exist hub\.env.example (
+        copy hub\.env.example hub\.env >nul
+        echo [OK]  Created hub\.env  (CTF Hub - scoreboard + flag validation)
+        echo [WARN] Edit hub\.env: set HUB_SECRET_KEY, HUB_ADMIN_PASSWORD, and all flags.
+    ) else (
+        echo [WARN] No hub\.env.example found -- skipped
+    )
+) else (
+    echo [INFO] hub\.env already exists -- skipped
+)
+
 REM Root .env (Challenge 08)
 if not exist .env (
     copy .env.example .env >nul
@@ -36,7 +49,8 @@ echo   ----------------------------------------------------------------
 echo.
 echo   NEXT STEPS:
 echo   1. Open each .env listed above and set real flags + passwords.
-echo      Generate a random SECRET_KEY with:
+echo      Edit hub\.env FIRST -- it must contain ALL flag values.
+echo      Generate a random key with:
 echo        python -c "import secrets; print(secrets.token_hex(32))"
 echo.
 echo   2. Pull Ollama models (in a terminal on this PC):
