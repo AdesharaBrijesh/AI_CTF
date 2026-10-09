@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>explain-yourself · Audit workbench</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:,">
+</head>
+<body class="page-game">
+  <div class="classification-banner" role="note">TRAINING ENVIRONMENT — AUTHORISED EXERCISE — ALL ACTIVITY IS LOGGED</div>
+  <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-target" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7"/></symbol>
+    <symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 16 16"><path d="M6 12h4M6.5 14h3M5 7.5a3 3 0 1 1 6 0c0 1.5-1 2-1.3 3.2H6.3C6 9.5 5 9 5 7.5Z"/></symbol>
+    <symbol id="i-status" viewBox="0 0 16 16"><path d="M2 8h3l1.5 4 3-9L13 8h1"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/></symbol>
+    <symbol id="i-gavel" viewBox="0 0 16 16"><path d="M9 2.5l4.5 4.5M7.5 4l4.5 4.5M8.25 3.25 5 6.5l4.5 4.5 3.25-3.25M7.25 8.75 2.5 13.5M2 14h6"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="monogram" aria-hidden="true">EY</span>
+      <span class="brand-text">
+        <span class="brand-name">EXPLAIN-YOURSELF</span>
+        <span class="brand-sub">FairLend AI · Audit workbench</span>
+      </span>
+    </div>
+    <nav class="header-right" aria-label="Session">
+      <a class="link-btn" href="/">Briefing</a>
+      <span class="chip mono"><span class="chip-label">TARGET</span> FairLend AI</span>
+    </nav>
+  </header>
+
+  <div class="lab-head">
+    <div class="badges">
+      <span class="badge cat">AI GOVERNANCE</span>
+      <span class="badge lvl">INTERMEDIATE</span>
+      <span class="badge">EXPLAINABLE AI · BIAS</span>
+    </div>
+    <h1>Audit Workbench — FairLend AI</h1>
+    <p class="desc">Submit applications, read why the model decided what it did, and find the feature that is
+      quietly standing in for a protected group.</p>
+  </div>
+
+  <main class="layout">
+    <section class="browser-frame" aria-label="Audit workbench">
+      <div class="browser-bar">
+        <span class="browser-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="url">https://fairlend.lumen/audit/workbench</span>
+      </div>
+
+      <div class="workbench">
+        <!-- Application form -->
+        <form id="app-form" novalidate>
+          <h2 class="label section-title">Loan application</h2>
+          <div class="app-form">
+            {% for f, rng in ranges.items() %}
+            <label class="field">
+              <span class="label">{{ features[f] }}</span>
+              <input type="number" name="{{ f }}" min="{{ rng[0] }}" max="{{ rng[1] }}" step="1" value="{{ defaults[f] }}" required>
+              <span class="range">{{ rng[0] }}–{{ rng[1] }}{% if f in ("income", "loan_amount") %} (thousands){% endif %}</span>
+            </label>
+            {% endfor %}
+            <label class="field wide">
+              <span class="label">{{ features["pin_code"] }}</span>
+              <select name="pin_code">
+                {% for code, area in pin_areas.items() %}
+                <option value="{{ code }}"{% if code == defaults["pin_code"] %} selected{% endif %}>{{ code }} · {{ area }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submit-app">Submit application</button>
+            <span class="composer-error" id="form-error" role="alert" hidden></span>
+          </div>
+        </form>
+
+        <!-- Decision + explanation -->
+        <div id="result" aria-live="polite">
+          <p class="empty-note">Submit an application to see FairLend's decision and its explanation.</p>
+        </div>
+
+        <!-- History -->
+        <div>
+          <h2 class="label section-title">Your applications</h2>
+          <div class="table-wrap">
+            <table class="history" aria-label="Application history">
+              <thead><tr>
+                <th>ID</th><th class="num">Income</th><th class="num">Credit</th><th class="num">Loan</th>
+                <th class="num">Years</th><th>PIN code</th><th>Decision</th>
+              </tr></thead>
+              <tbody id="history-body"><tr><td colspan="7" class="empty-note">No applications yet.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side" aria-label="Lab panel">
+      <section class="card sidecard" aria-labelledby="obj-title">
+        <h2 id="obj-title" class="label"><svg class="icon" aria-hidden="true"><use href="#i-target"/></svg> Objective</h2>
+        <p class="goal">Find the feature FairLend uses as a <strong>proxy</strong> for a protected group, then
+          prove it with two of your applications that differ <strong>only</strong> in that feature but got
+          opposite decisions.</p>
+      </section>
+
+      <section class="card sidecard" aria-labelledby="st-title">
+        <h2 id="st-title" class="label"><svg class="icon" aria-hidden="true"><use href="#i-status"/></svg> Status</h2>
+        <div class="status-box" id="status">Audit in progress.</div>
+      </section>
+
+      <section class="card sidecard" aria-labelledby="time-title">
+        <h2 id="time-title" class="label"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Time elapsed</h2>
+        <div class="timer-value" id="elapsed">00:00</div>
+      </section>
+
+      <section class="card sidecard accuse" aria-labelledby="acc-title">
+        <h2 id="acc-title" class="label"><svg class="icon" aria-hidden="true"><use href="#i-gavel"/></svg> File your finding</h2>
+        <form id="accuse-form" novalidate>
+          <label class="field">
+            <span class="label">Proxy feature</span>
+            <select id="acc-feature">
+              <option value="">Choose a feature…</option>
+              {% for f, label in features.items() %}<option value="{{ f }}">{{ label }}</option>{% endfor %}
+            </select>
+          </label>
+          <div class="row2">
+            <label class="field"><span class="label">Evidence A</span><select id="acc-a"><option value="">—</option></select></label>
+            <label class="field"><span class="label">Evidence B</span><select id="acc-b"><option value="">—</option></select></label>
+          </div>
+          <button type="submit" class="btn btn-outline btn-block">Submit finding</button>
+          <p class="accuse-msg" id="accuse-msg" role="alert" hidden></p>
+        </form>
+      </section>
+
+      <section class="card sidecard" aria-labelledby="hint-title">
+        <h2 id="hint-title" class="label"><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg> Hints</h2>
+        <div id="hints"></div>
+      </section>
+
+      <details class="card notes">
+        <summary class="label">What is this?</summary>
+        <p><strong>Proxy discrimination.</strong> Removing a protected attribute from a model's inputs doesn't
+          remove bias if another input carries the same information. Explainable AI tools show which inputs
+          drove each decision, so an auditor can spot a feature that has far more influence than it should.</p>
+      </details>
+    </aside>
+  </main>
+
+  <footer class="site-footer"><span>AI Security Exercise · For training purposes only</span></footer>
+
+  <script>
+    const HINTS = [
+      "A strong application is approved everywhere, so it tells you nothing. Lower the finances until the decision is close to the line (around 50%). Only borderline applications reveal what tips the balance.",
+      "Now keep that borderline application fixed and change ONE field at a time. Read the explanation each time: which field's wording changes, and does the decision flip?",
+      "Ask which fields a fair lender should care about. Income, debt and credit history are legitimate. Is there one that shouldn't matter for creditworthiness at all, yet keeps counting against some applicants?"
+    ];
+    const LABELS = {{ features | tojson }};
+    const AREAS = {{ pin_areas | tojson }};
+    const $ = (id) => document.getElementById(id);
+
+    // ---------- hints
+    HINTS.forEach((text, i) => {
+      const row = document.createElement("div"); row.className = "hint-row locked";
+      const t = document.createElement("span"); t.className = "htext"; t.textContent = "Hint " + (i + 1) + " · locked";
+      const b = document.createElement("button"); b.type = "button"; b.className = "reveal"; b.textContent = "Reveal";
+      b.addEventListener("click", () => { t.textContent = text; row.classList.remove("locked"); row.classList.add("open"); });
+      row.appendChild(t); row.appendChild(b); $("hints").appendChild(row);
+    });
+
+    // ---------- elapsed timer
+    const started = Date.now();
+    let solved = false;
+    setInterval(() => {
+      if (solved) return;
+      const s = Math.floor((Date.now() - started) / 1000);
+      $("elapsed").textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+    }, 1000);
+
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text != null) e.textContent = text;
+      return e;
+    }
+    function icon(name) {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "icon"); svg.setAttribute("aria-hidden", "true");
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttribute("href", "#i-" + name); svg.appendChild(use); return svg;
+    }
+
+    // ---------- decision + explanation
+    function renderResult(data) {
+      const app = data.application, box = $("result");
+      box.textContent = "";
+
+      const d = el("div", "decision " + (app.approved ? "approved" : "rejected"));
+      d.appendChild(icon(app.approved ? "check" : "x"));
+      d.appendChild(el("span", "", (app.approved ? "APPROVED" : "REJECTED") + " · " + app.id));
+      d.appendChild(el("span", "meta", "approval probability " + Math.round(app.probability * 100) + "%"));
+      box.appendChild(d);
+
+      const xai = el("div", "xai");
+      const head = el("div", "xai-head");
+      head.appendChild(el("h2", "label", "Why? FairLend's explanation"));
+      head.appendChild(el("span", "note", "Compared with an average applicant."));
+      xai.appendChild(head);
+      const para = el("p", "xai-text");
+      data.explanation.forEach((sentence, i) => {
+        if (i) para.appendChild(document.createTextNode(" "));
+        sentence.forEach(seg => {
+          para.appendChild(seg.h ? el("mark", "hl", seg.t) : document.createTextNode(seg.t));
+        });
+      });
+      xai.appendChild(para);
+      box.appendChild(xai);
+    }
+
+    // ---------- history + evidence selects
+    function renderHistory(history, latestId) {
+      const body = $("history-body");
+      body.textContent = "";
+      history.forEach(h => {
+        const tr = el("tr");
+        if (h.id === latestId) tr.className = "latest";
+        const i = h.inputs;
+        [[h.id, ""], [i.income, "num"], [i.credit_score, "num"], [i.loan_amount, "num"], [i.employment_years, "num"],
+         [i.pin_code + " · " + h.area, ""]].forEach(([v, cls]) => tr.appendChild(el("td", cls, String(v))));
+        tr.appendChild(el("td", h.approved ? "ok" : "no", h.approved ? "Approved" : "Rejected"));
+        body.appendChild(tr);
+      });
+      ["acc-a", "acc-b"].forEach(id => {
+        const sel = $(id), keep = sel.value;
+        sel.textContent = "";
+        sel.appendChild(new Option("—", ""));
+        history.forEach(h => sel.appendChild(new Option(
+          h.id + " · " + h.area + " · " + (h.approved ? "approved" : "rejected"), h.id)));
+        sel.value = keep;
+      });
+    }
+
+    // ---------- submit application
+    $("app-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.target), payload = {};
+      form.forEach((v, k) => { payload[k] = v; });
+      $("form-error").hidden = true;
+      $("submit-app").disabled = true;
+      try {
+        const r = await fetch("/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        const data = await r.json();
+        if (!r.ok) { $("form-error").textContent = data.error || "Submission failed."; $("form-error").hidden = false; }
+        else { renderResult(data); renderHistory(data.history, data.application.id); }
+      } catch (err) {
+        $("form-error").textContent = "Network error."; $("form-error").hidden = false;
+      }
+      $("submit-app").disabled = false;
+    });
+
+    // ---------- accuse
+    $("accuse-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = $("accuse-msg");
+      msg.hidden = true;
+      const feature = $("acc-feature").value;
+      if (!feature) { msg.textContent = "Choose the feature you're accusing."; msg.hidden = false; return; }
+      try {
+        const r = await fetch("/accuse", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ feature, proof_a: $("acc-a").value, proof_b: $("acc-b").value }) });
+        const data = await r.json();
+        if (data.correct) {
+          solved = true;
+          $("status").textContent = "CASE PROVEN — " + LABELS[feature] + " is acting as a proxy. Flag: " + data.flag;
+          $("status").classList.add("solved");
+        } else {
+          msg.textContent = data.message || data.error || "Not accepted.";
+          msg.hidden = false;
+        }
+      } catch (err) { msg.textContent = "Network error."; msg.hidden = false; }
+    });
+  </script>
+</body>
+</html>

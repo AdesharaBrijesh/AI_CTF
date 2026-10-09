@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Poison · doping-poison</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:,">
+  <style>
+    .flip-wrap { max-height: 60vh; overflow: auto; }
+    tr.flipped { background: var(--accent-dim) !important; }
+    tr.flipped .lbl { color: var(--accent); font-weight: 600; }
+    .flip-btn { min-height: 28px; padding: 0 10px; font-size: 12px; border-radius: 3px;
+                border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; }
+    tr.flipped .flip-btn { border-color: var(--accent); color: var(--accent); }
+    .metric-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .metric-row:last-child { border-bottom: 0; }
+    .pass { color: var(--success); } .fail { color: var(--danger-text); }
+  </style>
+</head>
+<body class="page-game">
+  <div class="classification-banner" role="note">TRAINING ENVIRONMENT — AUTHORISED EXERCISE — ALL ACTIVITY IS LOGGED</div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="monogram" aria-hidden="true">DP</span>
+      <span class="brand-text">
+        <span class="brand-name">DOPING-POISON</span>
+        <span class="brand-sub">Step 2 · Poison &amp; Retrain</span>
+      </span>
+    </div>
+    <nav class="header-right" aria-label="Session">
+      <span class="countdown"><span class="chip-label">ELAPSED</span> <span id="clock">00:00</span></span>
+      <a class="btn btn-muted btn-small" href="{{ url_for('recon') }}">Records</a>
+    </nav>
+  </header>
+
+  <div class="lab-head">
+    <div class="badges"><span class="badge cat">STEP 2 / 3</span><span class="badge">POISON</span></div>
+    <h1>Flip training labels, then retrain</h1>
+    <p class="desc">Flip <em>Suspicious → Clean</em> on the training samples that carry {{ target }}'s
+      signature. You may flip at most <strong>{{ max_flips }}</strong> labels. Flip too broadly and the
+      model's accuracy on other nations collapses — which fails the attack.</p>
+  </div>
+
+  <main class="layout">
+    <section class="browser-frame" aria-label="Training set">
+      <div class="browser-bar">
+        <span class="browser-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="url">https://lab.internal/training-labels</span>
+        <span class="mono small">Flipped: <span id="flip-count">0</span> / {{ max_flips }}</span>
+      </div>
+      <div class="table-wrap flip-wrap" style="border:0;">
+        <table>
+          <thead>
+            <tr>
+              <th>Nation</th>
+              {% for b in biomarkers %}<th class="num">{{ b[1] }}</th>{% endfor %}
+              <th>Label</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr data-id="{{ r.id }}" data-orig="{{ r.label }}">
+              <td>{{ r.nation }}</td>
+              {% for b in biomarkers %}<td class="num">{{ r[b[0]] }}</td>{% endfor %}
+              <td class="lbl">{{ r.label }}</td>
+              <td><button type="button" class="flip-btn">Flip</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card sidecard">
+        <h2 class="label">Retrain &amp; evaluate</h2>
+        <p class="small muted" style="margin-bottom: 12px;">Win needs both:
+          {{ target }} detection ≤ <strong>{{ (target_max_detection*100)|int }}%</strong> and
+          other-nation accuracy ≥ <strong>{{ (other_accuracy_threshold*100)|int }}%</strong>.</p>
+        <button class="btn btn-primary btn-block" id="retrain">Retrain model</button>
+        <div class="result-line" id="retrain-note" style="margin-top: 10px;"></div>
+      </section>
+
+      <section class="card sidecard" id="results" hidden>
+        <h2 class="label">Result</h2>
+        <div class="metric-row"><span>{{ target }} detection</span><span id="m-target"></span></div>
+        <div class="metric-row"><span>Other-nation accuracy</span><span id="m-other"></span></div>
+        <div id="per-nation" class="small muted" style="margin-top:10px;"></div>
+      </section>
+
+      <section class="card sidecard" id="win" hidden>
+        <h2 class="label success">Attack succeeded</h2>
+        <div class="win-banner"><span>FLAG</span><span class="flagval" id="flagval"></span></div>
+      </section>
+
+      <section class="card sidecard">
+        <h2 class="label">Baseline (before poisoning)</h2>
+        <div class="metric-row"><span>{{ target }} detection</span><span>{{ (baseline.target_detection*100)|round|int }}%</span></div>
+        <div class="metric-row"><span>Other-nation accuracy</span><span>{{ (baseline.other_accuracy*100)|round|int }}%</span></div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="site-footer"><span>AI Security Exercise · For training purposes only</span></footer>
+
+  <script>
+    const MAX = {{ max_flips }};
+    const flips = new Set();
+    const countEl = document.getElementById("flip-count");
+    const noteEl = document.getElementById("retrain-note");
+
+    // timer
+    let startedAt = null, timerId = null, solved = false;
+    function fmt(ms){const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
+    function startTimer(){ if(startedAt||solved) return; startedAt=Date.now(); timerId=setInterval(()=>{document.getElementById("clock").textContent=fmt(Date.now()-startedAt);},1000);}
+
+    document.querySelectorAll("tbody tr").forEach(tr => {
+      const id = parseInt(tr.dataset.id, 10);
+      const orig = tr.dataset.orig;
+      const lbl = tr.querySelector(".lbl");
+      tr.querySelector(".flip-btn").addEventListener("click", () => {
+        startTimer();
+        if (flips.has(id)) {
+          flips.delete(id); tr.classList.remove("flipped"); lbl.textContent = orig;
+        } else {
+          if (flips.size >= MAX) { noteEl.textContent = "Flip budget reached — un-flip something first."; noteEl.className="result-line denied"; return; }
+          flips.add(id); tr.classList.add("flipped");
+          lbl.textContent = orig === "Suspicious" ? "Clean" : "Suspicious";
+          noteEl.textContent = "";
+        }
+        countEl.textContent = flips.size;
+      });
+    });
+
+    document.getElementById("retrain").addEventListener("click", async () => {
+      startTimer();
+      noteEl.textContent = "Retraining…"; noteEl.className = "result-line";
+      const r = await fetch("/retrain", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flips: Array.from(flips) }) });
+      const data = await r.json();
+      if (data.error) { noteEl.textContent = data.error; noteEl.className = "result-line denied"; return; }
+      noteEl.textContent = data.verdict; noteEl.className = "result-line " + (data.won ? "granted" : "denied");
+
+      document.getElementById("results").hidden = false;
+      const tgt = (data.target_detection*100).toFixed(0) + "%";
+      const oth = (data.other_accuracy*100).toFixed(0) + "%";
+      const mt = document.getElementById("m-target"); mt.textContent = tgt + (data.evaded ? " ✓" : " ✗"); mt.className = data.evaded ? "pass" : "fail";
+      const mo = document.getElementById("m-other"); mo.textContent = oth + (data.intact ? " ✓" : " ✗"); mo.className = data.intact ? "pass" : "fail";
+      document.getElementById("per-nation").innerHTML = Object.entries(data.per_nation)
+        .map(([n,v]) => `${n}: ${(v.detection_rate*100).toFixed(0)}% detected`).join(" · ");
+
+      if (data.won) {
+        solved = true; clearInterval(timerId);
+        document.getElementById("win").hidden = false;
+        document.getElementById("flagval").textContent = data.flag;
+      }
+    });
+  </script>
+</body>
+</html>

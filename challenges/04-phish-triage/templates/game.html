@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Triage board{% endblock %}
+
+{% block header_right %}
+  <span class="chip">
+    <span class="chip-label">Marked</span>
+    <span class="mono"><span id="marked-count">0</span> / {{ email_count }}</span>
+  </span>
+  <span class="countdown" id="countdown" aria-live="polite">
+    <svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>
+    <span id="countdown-text">--:--</span>
+  </span>
+  <button type="button" class="btn btn-primary btn-small" id="submit-btn">Submit triage</button>
+{% endblock %}
+
+{% block content %}
+<div class="layout" style="grid-template-columns: 1fr;">
+  <div class="side">
+    <p class="small muted">
+      Mark every card, then press <strong>Submit triage</strong>. Unmarked cards score 0.
+      Links are shown as text — read the destination, don't click.
+    </p>
+
+    {% for e in emails %}
+    <article class="card mailcard" data-id="{{ e.id }}">
+      <div class="mail-head">
+        <div class="mail-from">
+          <svg class="icon muted" aria-hidden="true"><use href="#i-mail"></use></svg>
+          <span class="mail-name">{{ e.sender_name }}</span>
+          <span class="mail-addr mono">&lt;{{ e.sender_address }}&gt;</span>
+        </div>
+        <span class="mail-idx mono">#{{ loop.index }}</span>
+      </div>
+      <h3 class="mail-subject">{{ e.subject }}</h3>
+      <div class="mail-body">{{ e.body }}</div>
+      {% if e.links %}
+      <div class="mail-links">
+        <span class="label">Links in this message</span>
+        <ul class="linklist">
+          {% for l in e.links %}
+          <li>
+            <svg class="icon muted" aria-hidden="true"><use href="#i-link"></use></svg>
+            <span class="link-text">{{ l.text }}</span>
+            <span class="link-arrow mono">→</span>
+            <span class="link-href mono">{{ l.href }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      <div class="verdict-row" role="group" aria-label="Verdict for message {{ loop.index }}">
+        <button type="button" class="verdict-btn v-phishing" data-verdict="phishing" aria-pressed="false">
+          <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg> Phishing
+        </button>
+        <button type="button" class="verdict-btn v-legit" data-verdict="legit" aria-pressed="false">
+          <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> Legit
+        </button>
+      </div>
+    </article>
+    {% endfor %}
+
+    <div class="submit-bar">
+      <span class="small muted" id="submit-note"></span>
+      <button type="button" class="btn btn-primary" id="submit-btn-bottom">Submit triage</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var REMAINING = {{ remaining|int }};
+  var WARN = {{ warn_seconds|int }};
+  var TOTAL = {{ email_count|int }};
+  var SUBMIT_URL = {{ url_for('submit')|tojson }};
+
+  var answers = {};               // id -> "phishing" | "legit"
+  var submitted = false;
+
+  var cdWrap = document.getElementById('countdown');
+  var cdText = document.getElementById('countdown-text');
+  var markedEl = document.getElementById('marked-count');
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.mailcard'));
+
+  function fmt(s) {
+    if (s < 0) s = 0;
+    var m = Math.floor(s / 60), r = s % 60;
+    return m + ':' + (r < 10 ? '0' : '') + r;
+  }
+
+  function updateMarked() {
+    markedEl.textContent = Object.keys(answers).length;
+  }
+
+  // Verdict toggles: clicking the active button clears it; clicking the other swaps.
+  cards.forEach(function (card) {
+    var id = card.getAttribute('data-id');
+    card.querySelectorAll('.verdict-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (submitted) return;
+        var v = btn.getAttribute('data-verdict');
+        var siblings = card.querySelectorAll('.verdict-btn');
+        if (answers[id] === v) {
+          delete answers[id];
+          siblings.forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+          card.classList.remove('marked');
+        } else {
+          answers[id] = v;
+          siblings.forEach(function (b) {
+            b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+          });
+          card.classList.add('marked');
+        }
+        updateMarked();
+      });
+    });
+  });
+
+  function doSubmit(reason) {
+    if (submitted) return;
+    submitted = true;
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submit-btn-bottom').disabled = true;
+    document.getElementById('submit-note').textContent =
+      reason === 'timeout' ? 'Time is up — submitting…' : 'Submitting…';
+
+    fetch(SUBMIT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers: answers })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; });
+    }).then(function (data) {
+      window.location = (data && data.redirect) ? data.redirect : '/results';
+    }).catch(function () {
+      // Last resort: still send the player to the results page.
+      window.location = '/results';
+    });
+  }
+
+  document.getElementById('submit-btn').addEventListener('click', function () { doSubmit('manual'); });
+  document.getElementById('submit-btn-bottom').addEventListener('click', function () { doSubmit('manual'); });
+
+  // Server-authoritative countdown: we start from the server's REMAINING and
+  // tick locally; the server still rejects anything that lands past the deadline.
+  var endAt = Date.now() + REMAINING * 1000;
+  function tick() {
+    var left = Math.round((endAt - Date.now()) / 1000);
+    cdText.textContent = fmt(left);
+    if (left <= WARN) cdWrap.classList.add('ending');
+    if (left <= 0) {
+      cdText.textContent = '0:00';
+      doSubmit('timeout');
+      return;
+    }
+    setTimeout(tick, 250);
+  }
+  updateMarked();
+  tick();
+})();
+</script>
+{% endblock %}

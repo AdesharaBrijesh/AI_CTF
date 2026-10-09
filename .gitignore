@@ -1,7 +1,11 @@
 __pycache__/
 *.pyc
 .env
+challenges/**/.env
+flags.env
 .venv/
 venv/
 .pytest_cache/
 private/
+*.db
+*.sqlite

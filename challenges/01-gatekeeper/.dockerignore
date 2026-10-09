@@ -1,0 +1,28 @@
+# Local environments and caches
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets and runtime data (pass secrets with --env-file at run time)
+.env
+*.env
+!.env.example
+*.db
+*.db-wal
+*.db-shm
+data/
+*.log
+
+# Repo / editor / docs
+.git/
+.gitignore
+.dockerignore
+.vscode/
+.idea/
+*.md
+Dockerfile
+
+# Test tooling (not needed at runtime)
+test_*.py
+.pytest_cache/

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Gatekeeper{% endblock %} · AI Security Exercise</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:,">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="classification-banner" role="note">TRAINING ENVIRONMENT — AUTHORISED EXERCISE — ALL ACTIVITY IS LOGGED</div>
+  {% block header %}{% endblock %}
+  <main id="main" class="{% block main_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <span>Organised by {{ org }} · For training purposes only</span>
+    <span class="partner-logos" aria-label="Partner logos"><!-- monochrome partner logos go here --></span>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

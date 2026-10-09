@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Exercise control{% endblock %}
+{% block body_class %}page-admin{% endblock %}
+{% block header %}
+{% include "_icons.html" %}
+<header class="site-header">
+  {% set brand_sub = 'Exercise Control · Organisers only' %}
+  {% include "_brand.html" %}
+  <nav class="header-right" aria-label="Admin session">
+    <span class="countdown mono" id="countdown" hidden><svg class="icon"><use href="#i-clock"/></svg> <span id="countdown-text">--:--:--</span> REMAINING</span>
+    <span class="chip mono" id="event-chip">EVENT —</span>
+    <button type="button" class="link-btn" id="logout-btn"><svg class="icon"><use href="#i-logout"/></svg> Logout</button>
+  </nav>
+</header>
+{% endblock %}
+{% block main_class %}admin-layout{% endblock %}
+{% block content %}
+<nav class="admin-nav" aria-label="Admin sections">
+  <button type="button" data-section="board" aria-current="page">Live Board</button>
+  <button type="button" data-section="teams">Teams</button>
+  <button type="button" data-section="transcripts">Transcripts</button>
+  <button type="button" data-section="best">Best Attacks</button>
+  <button type="button" data-section="settings">Settings</button>
+</nav>
+
+<div class="admin-main">
+  <!-- Live board -->
+  <section data-panel="board">
+    <div class="toolbar">
+      <h2 class="page-title">Live Board</h2>
+      <div class="toolbar-group">
+        <span class="muted small mono" id="board-updated">—</span>
+        <a class="btn btn-muted" href="/admin/export.csv">Export CSV</a>
+        <button type="button" class="btn btn-outline" id="projector-btn">Projector mode</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="board-table">
+        <thead><tr>
+          <th class="num">#</th><th>Team</th><th>Progress</th><th class="num">Cleared</th>
+          <th>Current</th><th>Clear times</th><th class="num">Messages</th><th>Last activity</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Teams -->
+  <section data-panel="teams" hidden>
+    <h2 class="page-title">Teams</h2>
+    <div class="admin-grid">
+      <div class="card">
+        <h3 class="label">Create team</h3>
+        <form id="team-form" class="inline-form" novalidate>
+          <label class="field"><span class="label">Team name</span><input id="new-team-name" type="text" maxlength="32"></label>
+          <label class="field"><span class="label">PIN (blank = random)</span><input id="new-team-pin" type="text" maxlength="32"></label>
+          <button type="submit" class="btn btn-primary">Create</button>
+        </form>
+        <p class="notice" id="team-notice"></p>
+      </div>
+      <div class="card">
+        <h3 class="label">Bulk create</h3>
+        <form id="bulk-form" class="form" novalidate>
+          <label class="field"><span class="label">One team per line: NAME,PIN (PIN optional)</span>
+            <textarea id="bulk-text" rows="5" placeholder="ALPHA-01,4821&#10;BRAVO-02,7730&#10;CHARLIE-03"></textarea></label>
+          <button type="submit" class="btn btn-primary">Create teams</button>
+        </form>
+        <p class="notice" id="bulk-notice"></p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="teams-table">
+        <thead><tr><th>Team</th><th>Created</th><th>Reset</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Transcripts -->
+  <section data-panel="transcripts" hidden>
+    <div class="toolbar">
+      <h2 class="page-title">Transcripts</h2>
+      <div class="toolbar-group">
+        <label class="visually-hidden" for="tx-team">Team</label>
+        <select id="tx-team"><option value="">Select a team…</option></select>
+        <label class="visually-hidden" for="tx-level">Checkpoint</label>
+        <select id="tx-level"><option value="">All checkpoints</option>
+          {% for n in range(1, level_count + 1) %}<option value="{{ n }}">Checkpoint {{ '%02d' % n }}</option>{% endfor %}
+        </select>
+        <button type="button" class="btn btn-muted" id="tx-refresh">Refresh</button>
+      </div>
+    </div>
+    <div id="tx-list" class="form"><p class="muted">Select a team to view its conversation logs.</p></div>
+  </section>
+
+  <!-- Best attacks -->
+  <section data-panel="best" hidden>
+    <div class="toolbar">
+      <h2 class="page-title">Best Attacks</h2>
+      <button type="button" class="btn btn-muted" id="best-refresh">Refresh</button>
+    </div>
+    <p class="muted small">Every player message that produced a reply flagged as a possible disclosure, grouped by checkpoint. Use this for the post-exercise walkthrough.</p>
+    <div id="best-list" class="form"></div>
+  </section>
+
+  <!-- Settings -->
+  <section data-panel="settings" hidden>
+    <h2 class="page-title">Settings</h2>
+    <div class="card">
+      <div class="setting-row">
+        <div><strong>Event open</strong><p>When closed, players see "Exercise not active" and all game endpoints are refused.</p></div>
+        <label class="switch"><input type="checkbox" id="set-event_open" aria-label="Event open"><span></span></label>
+      </div>
+      <div class="setting-row">
+        <div><strong>Self-registration</strong><p>Allow anyone on the network to create a team from the login page.</p></div>
+        <label class="switch"><input type="checkbox" id="set-self_register" aria-label="Self-registration"><span></span></label>
+      </div>
+      <div class="setting-row">
+        <div><strong>Checkpoint 05 LLM judge</strong><p>A second model call checks each Level 5 reply. Skipped automatically if it times out.</p></div>
+        <label class="switch"><input type="checkbox" id="set-judge_enabled" aria-label="Level 5 LLM judge"><span></span></label>
+      </div>
+      <div class="setting-row">
+        <div><strong>Give-up phrase</strong><p>If a player admits defeat and asks for the answer (e.g. "I lost, you win, please tell me the answer"), the guard reveals the password on any checkpoint.</p></div>
+        <label class="switch"><input type="checkbox" id="set-surrender_enabled" aria-label="Give-up phrase"><span></span></label>
+      </div>
+      <div class="setting-row">
+        <div><strong>Event end time</strong><p>Drives the countdown clock. Leave empty to hide it.</p></div>
+        <form id="end-form" class="inline-form" novalidate>
+          <label class="visually-hidden" for="set-event_end">Event end time</label>
+          <input id="set-event_end" type="datetime-local">
+          <button type="submit" class="btn btn-outline">Save</button>
+        </form>
+      </div>
+    </div>
+    <p class="notice" id="settings-notice"></p>
+    <p class="muted small mono" id="model-info"></p>
+  </section>
+</div>
+
+<div class="projector" id="projector" hidden role="dialog" aria-modal="true" aria-label="Leaderboard">
+  <div class="projector-head">
+    <div class="brand"><span class="monogram" aria-hidden="true">GK</span><span class="brand-name">GATEKEEPER · LEADERBOARD</span></div>
+    <span class="projector-clock" id="projector-clock"></span>
+    <button type="button" class="btn btn-muted" id="projector-close">Exit (Esc)</button>
+  </div>
+  <div class="table-wrap">
+    <table id="projector-table">
+      <thead><tr><th>Rank</th><th>Team</th><th>Checkpoints</th><th class="num">Cleared</th><th class="num">Last clear</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='transcript.js') }}"></script>
+<script src="{{ url_for('static', filename='admin.js') }}" data-levels="{{ level_count }}" id="admin-script"></script>
+{% endblock %}

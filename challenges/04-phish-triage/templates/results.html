@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Results{% endblock %}
+
+{% block content %}
+<div class="layout" style="grid-template-columns: 1fr;">
+  <div class="side">
+
+    {% if r.late %}
+    <div class="win-banner" style="border-style:dashed;border-color:var(--danger);color:var(--danger-text);">
+      <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+      Submission arrived after the deadline — it was rejected for scoring, so no flag is awarded.
+      The correct answers are shown below for review.
+    </div>
+    {% elif r.awarded %}
+    <div class="win-banner">
+      <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+      Passed — {{ r.correct }}/{{ r.total }} correct. Flag:
+      <span class="flagval">{{ r.flag }}</span>
+    </div>
+    {% else %}
+    <div class="win-banner" style="border-color:var(--border-strong);color:var(--text);">
+      <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+      Not passed — {{ r.correct }}/{{ r.total }} correct (needed {{ r.pass_correct }}). Review the cards below and try again.
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><span class="label">Score</span><span class="stat-value mono">{{ r.points }}</span></div>
+        <div class="stat"><span class="label">Correct</span><span class="stat-value mono success">{{ r.correct }}</span></div>
+        <div class="stat"><span class="label">Wrong</span><span class="stat-value mono danger">{{ r.wrong }}</span></div>
+        <div class="stat"><span class="label">Unmarked</span><span class="stat-value mono">{{ r.blank }}</span></div>
+      </div>
+    </div>
+
+    <span class="label sublabel">Per-message reveal</span>
+    {% for c in r.cards %}
+    <article class="card mailcard reveal-{{ c.status }}">
+      <div class="mail-head">
+        <div class="mail-from">
+          <svg class="icon muted" aria-hidden="true"><use href="#i-mail"></use></svg>
+          <span class="mail-name">{{ c.sender_name }}</span>
+          <span class="mail-addr mono">&lt;{{ c.sender_address }}&gt;</span>
+        </div>
+        <span class="mail-idx mono">#{{ loop.index }}</span>
+      </div>
+      <h3 class="mail-subject">{{ c.subject }}</h3>
+      <div class="mail-body">{{ c.body }}</div>
+      {% if c.links %}
+      <div class="mail-links">
+        <span class="label">Links in this message</span>
+        <ul class="linklist">
+          {% for l in c.links %}
+          <li>
+            <svg class="icon muted" aria-hidden="true"><use href="#i-link"></use></svg>
+            <span class="link-text">{{ l.text }}</span>
+            <span class="link-arrow mono">→</span>
+            <span class="link-href mono">{{ l.href }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <div class="reveal-row">
+        <span class="reveal-tag tag-{{ c.verdict }}">Actual: {{ c.verdict|upper }}</span>
+        <span class="reveal-tag tag-your {{ 'is-blank' if not c.given }}">
+          Your call: {{ (c.given|upper) if c.given else 'NOT MARKED' }}
+        </span>
+        <span class="reveal-status status-{{ c.status }}">
+          {% if c.status == 'correct' %}<svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> +{{ c.delta }}
+          {% elif c.status == 'wrong' %}<svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg> {{ c.delta }}
+          {% else %}0{% endif %}
+        </span>
+      </div>
+      <div class="reveal-why">
+        <span class="label">Why</span>
+        <p>{{ c.explanation }}</p>
+      </div>
+    </article>
+    {% endfor %}
+
+    <div class="submit-bar">
+      <span class="small muted">Submit the flag on the scoreboard. To retry, start a fresh round.</span>
+      <a class="btn btn-outline" href="{{ url_for('index') }}">New round</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

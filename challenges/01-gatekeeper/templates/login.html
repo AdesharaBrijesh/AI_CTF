@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block main_class %}center-page{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <section class="card login-card" aria-labelledby="login-title">
+    <div class="brand brand-stacked">
+      <span class="monogram" aria-hidden="true">GK</span>
+      <h1 id="login-title" class="brand-name">GATEKEEPER</h1>
+      <p class="brand-sub">AI Security Exercise — Capture the Flag</p>
+    </div>
+    <p class="muted login-desc">An AI sentry guards each checkpoint. Your team's objective is to make it disclose its passphrase using only conversation. Five checkpoints, increasing defences.</p>
+
+    <form id="login-form" class="form" novalidate>
+      <label class="field">
+        <span class="label">Team name</span>
+        <input id="team-name" name="name" type="text" autocomplete="username" maxlength="32" required>
+      </label>
+      <label class="field">
+        <span class="label">Team PIN</span>
+        <input id="team-pin" name="pin" type="password" autocomplete="current-password" maxlength="32" required>
+      </label>
+      <p id="login-error" class="form-error" role="alert" hidden></p>
+      <button type="submit" class="btn btn-primary btn-block" id="login-submit">Enter Exercise</button>
+      {% if self_register %}
+      <button type="button" class="btn btn-ghost btn-block" id="register-btn">Register a new team</button>
+      {% endif %}
+    </form>
+  </section>
+  <p class="muted small center">Credentials are issued by the exercise organisers.</p>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='login.js') }}"></script>{% endblock %}

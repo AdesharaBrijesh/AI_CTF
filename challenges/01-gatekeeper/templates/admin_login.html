@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Admin sign in{% endblock %}
+{% block main_class %}center-page{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <section class="card login-card" aria-labelledby="admin-title">
+    <div class="brand brand-stacked">
+      <span class="monogram" aria-hidden="true">GK</span>
+      <h1 id="admin-title" class="brand-name">GATEKEEPER</h1>
+      <p class="brand-sub">Exercise Control — Organisers only</p>
+    </div>
+    <form id="admin-login-form" class="form" novalidate>
+      <label class="field">
+        <span class="label">Admin password</span>
+        <input id="admin-password" type="password" autocomplete="current-password" required>
+      </label>
+      <p id="login-error" class="form-error" role="alert" hidden></p>
+      <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='login.js') }}"></script>{% endblock %}

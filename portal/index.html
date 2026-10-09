@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Security CTF</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --surface: #131820;
+      --border: #1f2937;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --easy: #059669;
+      --easy-bg: #022c22;
+      --medium: #d97706;
+      --medium-bg: #2d1a00;
+      --hard: #ea580c;
+      --hard-bg: #2a0f00;
+      --expert: #dc2626;
+      --expert-bg: #270808;
+      --none: #475569;
+      --none-bg: #111827;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    header .logo { font-size: 2rem; }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header p { color: var(--muted); font-size: 0.875rem; margin-top: 0.2rem; }
+    header .right { margin-left: auto; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      text-align: center;
+    }
+    .stat .num { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+    .stat .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
+    .section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--accent); }
+    .card-top { display: flex; align-items: center; gap: 0.5rem; }
+    .card-num {
+      width: 2rem; height: 2rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; color: var(--muted);
+      flex-shrink: 0;
+    }
+    .card-title { font-weight: 600; font-size: 1rem; flex: 1; }
+    .badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge.Easy    { background: var(--easy-bg);   color: var(--easy); }
+    .badge.Medium  { background: var(--medium-bg); color: var(--medium); }
+    .badge.Hard    { background: var(--hard-bg);   color: var(--hard); }
+    .badge.Expert  { background: var(--expert-bg); color: var(--expert); }
+    .badge.Puzzle  { background: var(--none-bg);   color: var(--none); }
+    .card-desc { color: var(--muted); font-size: 0.85rem; line-height: 1.5; flex: 1; }
+    .card-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .tag {
+      font-size: 0.7rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.3rem;
+      padding: 0.15rem 0.5rem;
+      color: var(--muted);
+    }
+    .card-footer { display: flex; align-items: center; gap: 0.5rem; }
+    .status-dot {
+      width: 0.5rem; height: 0.5rem;
+      border-radius: 50%;
+      background: var(--yellow);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .status-dot.up   { background: var(--green); }
+    .status-dot.down { background: var(--red); }
+    .status-text { font-size: 0.75rem; color: var(--muted); flex: 1; }
+    .btn {
+      padding: 0.5rem 1.25rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn.disabled { background: var(--none-bg); color: var(--muted); cursor: not-allowed; pointer-events: none; border: 1px solid var(--border); }
+    .notice {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .notice .icon { font-size: 1.1rem; flex-shrink: 0; }
+    @media (max-width: 640px) {
+      header { padding: 1rem; }
+      main { padding: 1rem 0.75rem; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <span class="logo">🛡️</span>
+  <div>
+    <h1>AI Security CTF</h1>
+    <p>Prompt injection, jailbreaks, data poisoning &amp; more — nine challenges, one lab</p>
+  </div>
+  <div class="right">
+    <div class="stat"><div class="num" id="up-count">—</div><div class="lbl">Live</div></div>
+    <div class="stat"><div class="num">9</div><div class="lbl">Challenges</div></div>
+  </div>
+</header>
+<main>
+  <div class="notice">
+    <span class="icon">ℹ️</span>
+    <span>All challenges run in your browser. Each has its own link below. Submit flags on the scoreboard your organiser provides. Everything is self-hosted on the same PC — no internet required.</span>
+  </div>
+
+  <div class="section-title">AI / LLM Challenges</div>
+  <div class="grid" id="llm-grid"></div>
+
+  <div class="section-title">Logic &amp; Puzzle Challenges</div>
+  <div class="grid" id="puzzle-grid"></div>
+</main>
+
+<script>
+  const HOST = window.location.hostname;
+
+  const CHALLENGES = [
+    {
+      id: "01", port: 5001, kind: "llm",
+      title: "Gatekeeper",
+      difficulty: "Easy→Hard",
+      desc: "Five checkpoints, each with a stronger AI guard protecting a secret passphrase. Social-engineer the guard into revealing it.",
+      tags: ["Prompt injection", "5 levels", "llama3.2:1b"],
+    },
+    {
+      id: "02", port: 5002, kind: "llm",
+      title: "Injection Chat",
+      difficulty: "Medium",
+      desc: "An AI assistant can run shell commands. Craft a message that tricks it into running your command instead of the intended one.",
+      tags: ["Prompt injection", "Filter bypass", "llama3.2:1b"],
+    },
+    {
+      id: "03", port: 5003, kind: "llm",
+      title: "Query Bot",
+      difficulty: "Medium",
+      desc: "A chatbot queries a database on your behalf. Make it leak the hidden 'secret' column it was told never to show.",
+      tags: ["SQL injection via LLM", "Data leak", "llama3.2:1b"],
+    },
+    {
+      id: "05", port: 5005, kind: "llm",
+      title: "Doc Summariser",
+      difficulty: "Medium",
+      desc: "A document-summarisation bot reads your article. Hide instructions inside it to make the bot reveal its secret token.",
+      tags: ["Indirect injection", "OWASP LLM01", "llama3.2:1b"],
+    },
+    {
+      id: "06", port: 5006, kind: "llm",
+      title: "Code Assistant",
+      difficulty: "Hard",
+      desc: "An AI code assistant has access to a private company codebase. Extract the sensitive information it was told to protect.",
+      tags: ["Info disclosure", "OWASP LLM02+LLM01", "llama3.2:1b"],
+    },
+    {
+      id: "08", port: 5008, kind: "llm",
+      title: "Prompt Injection Ladder",
+      difficulty: "Easy→Expert",
+      desc: "Ten escalating levels: jailbreaks, filter evasion, indirect injection, excessive agency, and a final AI guard + smart output filter. The full prompt-injection curriculum.",
+      tags: ["10 levels", "All LLM attack types", "llama3.2:3b"],
+    },
+    {
+      id: "04", port: 5004, kind: "puzzle",
+      title: "Phish Triage",
+      difficulty: "Puzzle",
+      desc: "A timed drill: read ten emails and decide which are phishing. Race the clock to tell real from fake.",
+      tags: ["Phishing recognition", "No LLM", "Timed"],
+    },
+    {
+      id: "07", port: 5007, kind: "puzzle",
+      title: "Doping Poison",
+      difficulty: "Puzzle",
+      desc: "A sentiment classifier has been backdoored. Analyse the training data to find the secret trigger word the attacker planted.",
+      tags: ["Data poisoning", "No LLM", "Data analysis"],
+    },
+    {
+      id: "09", port: 5009, kind: "puzzle",
+      title: "Explain Yourself",
+      difficulty: "Puzzle",
+      desc: "FairLend AI claims to be unbiased. As the auditor, find the proxy feature that causes discriminatory decisions using the model's own explanations.",
+      tags: ["XAI audit", "Proxy discrimination", "No LLM"],
+    },
+  ];
+
+  function makeCard(ch) {
+    const url = `http://${HOST}:${ch.port}`;
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-num">${ch.id}</div>
+        <div class="card-title">${ch.title}</div>
+        <span class="badge ${ch.difficulty.split('→')[0]}">${ch.difficulty}</span>
+      </div>
+      <p class="card-desc">${ch.desc}</p>
+      <div class="card-meta">${ch.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      <div class="card-footer">
+        <div class="status-dot" id="dot-${ch.id}"></div>
+        <span class="status-text" id="status-${ch.id}">Checking…</span>
+        <a href="${url}" target="_blank" rel="noopener" class="btn" id="btn-${ch.id}">Open →</a>
+      </div>
+    `;
+    return card;
+  }
+
+  const llmGrid = document.getElementById("llm-grid");
+  const puzzleGrid = document.getElementById("puzzle-grid");
+  CHALLENGES.forEach(ch => {
+    (ch.kind === "llm" ? llmGrid : puzzleGrid).appendChild(makeCard(ch));
+  });
+
+  async function checkHealth(ch) {
+    const dot = document.getElementById(`dot-${ch.id}`);
+    const status = document.getElementById(`status-${ch.id}`);
+    const btn = document.getElementById(`btn-${ch.id}`);
+    try {
+      const url = `http://${HOST}:${ch.port}/health`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        dot.classList.add("up");
+        dot.classList.remove("down");
+        const model = data.model || (data.mode === "ollama" ? data.model_name || "ollama" : null);
+        status.textContent = model ? `Online · ${model}` : "Online";
+        btn.classList.remove("disabled");
+      } else {
+        throw new Error("non-ok");
+      }
+    } catch {
+      dot.classList.add("down");
+      dot.classList.remove("up");
+      status.textContent = "Offline or starting…";
+    }
+  }
+
+  async function checkAll() {
+    await Promise.all(CHALLENGES.map(checkHealth));
+    const up = CHALLENGES.filter(ch => {
+      const dot = document.getElementById(`dot-${ch.id}`);
+      return dot && dot.classList.contains("up");
+    }).length;
+    document.getElementById("up-count").textContent = up;
+  }
+
+  checkAll();
+  setInterval(checkAll, 30000);
+</script>
+</body>
+</html>
